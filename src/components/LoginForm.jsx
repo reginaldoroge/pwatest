@@ -64,6 +64,10 @@ export default function LoginForm({
       </p>
       
       <form onSubmit={handleSubmit}>
+        {/* Campos ocultos fictícios para capturar e desviar o preenchimento automático do navegador */}
+        <input type="text" style={{ position: 'absolute', top: '-9999px', left: '-9999px' }} tabIndex="-1" readOnly />
+        <input type="password" style={{ position: 'absolute', top: '-9999px', left: '-9999px' }} tabIndex="-1" readOnly />
+
         {/* CPF FIELD WITH MASK & VALIDATION TICK */}
         <div className="form-group">
           <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -151,6 +155,7 @@ export default function LoginForm({
           <input 
             type="password" 
             inputMode="numeric"
+            autoComplete="new-password"
             className="form-input" 
             placeholder="Digite sua senha de segurança" 
             value={password}
