@@ -55,11 +55,11 @@ export default function LoginForm({
 
   return (
     <div className="glass-panel" style={{ width: '100%', margin: 0, zIndex: 100 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '16px' }}>
         <Shield className="text-primary" style={{ color: 'var(--primary)' }} />
-        <h2 style={{ fontSize: '18px' }}>Login de Acesso</h2>
+        <h2 style={{ fontSize: '18px', textAlign: 'center' }}>Login de Acesso</h2>
       </div>
-      <p style={{ marginBottom: '20px' }}>
+      <p style={{ marginBottom: '20px', textAlign: 'center' }}>
         Informe suas credenciais de colaborador para acessar o sistema de Ponto Seguro. A sessão permanecerá ativa até que realize o logoff.
       </p>
       
@@ -70,7 +70,7 @@ export default function LoginForm({
 
         {/* CPF FIELD WITH MASK & VALIDATION TICK */}
         <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <Hash size={14} /> CPF do Colaborador
           </label>
           <div style={{ position: 'relative' }}>
@@ -81,7 +81,7 @@ export default function LoginForm({
               placeholder="000.000.000-00" 
               value={cpf}
               onChange={handleCpfChange}
-              style={{ width: '100%', paddingRight: '40px' }}
+              style={{ width: '100%', paddingLeft: '40px', paddingRight: '40px', textAlign: 'center' }}
               required
             />
             {cpf.length === 14 && (
@@ -97,16 +97,16 @@ export default function LoginForm({
             )}
           </div>
           {cpf.length > 0 && cpf.length < 14 && (
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Digite os 11 dígitos do CPF</span>
+            <span style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>Digite os 11 dígitos do CPF</span>
           )}
           {cpf.length === 14 && !isCpfValid && (
-            <span style={{ fontSize: '11px', color: 'var(--error)' }}>Algoritmo de CPF rejeitou estes dígitos</span>
+            <span style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: 'var(--error)' }}>Algoritmo de CPF rejeitou estes dígitos</span>
           )}
         </div>
 
         {/* FULL NAME FIELD */}
         <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <User size={14} /> Nome Completo
           </label>
           <input 
@@ -121,13 +121,14 @@ export default function LoginForm({
               setName(e.target.value)
               setError('')
             }}
+            style={{ textAlign: 'center' }}
             required
           />
         </div>
 
         {/* ROLE DROPDOWN FIELD */}
         <div className="form-group">
-          <label className="form-label">Função / Cargo</label>
+          <label className="form-label" style={{ display: 'flex', justifyContent: 'center' }}>Função / Cargo</label>
           <select 
             className="form-input"
             value={role}
@@ -136,7 +137,9 @@ export default function LoginForm({
               width: '100%', 
               background: 'rgba(9, 13, 22, 0.95)', 
               color: 'var(--text-main)',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              textAlign: 'center',
+              textAlignLast: 'center'
             }}
           >
             <option value="Portaria">🏠 Portaria</option>
@@ -149,7 +152,7 @@ export default function LoginForm({
 
         {/* PASSWORD FIELD */}
         <div className="form-group" style={{ marginBottom: '24px' }}>
-          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <Lock size={14} /> Senha de Segurança
           </label>
           <input 
@@ -163,6 +166,7 @@ export default function LoginForm({
               setPassword(e.target.value)
               setError('')
             }}
+            style={{ textAlign: 'center' }}
             required
           />
         </div>
@@ -176,7 +180,8 @@ export default function LoginForm({
             borderRadius: '12px', 
             color: 'var(--error)', 
             fontSize: '13px', 
-            marginBottom: '20px' 
+            marginBottom: '20px',
+            textAlign: 'center'
           }}>
             {error}
           </div>
