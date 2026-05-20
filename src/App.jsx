@@ -35,21 +35,6 @@ function App() {
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
 
-  // AI Face recognition states
-  const [isModelsLoaded, setIsModelsLoaded] = useState(false)
-  const [isLoadingModels, setIsLoadingModels] = useState(false)
-  const [modelsError, setModelsError] = useState(null)
-  const [savedDescriptor, setSavedDescriptor] = useState(() => {
-    const saved = localStorage.getItem('ponto_employee_face_descriptor')
-    return saved ? JSON.parse(saved) : null
-  })
-  const [isEnrollingFace, setIsEnrollingFace] = useState(false)
-  const [faceEnrollError, setFaceEnrollError] = useState(null)
-  const [faceMatchDistance, setFaceMatchDistance] = useState(null)
-  const [isEnrollCameraActive, setIsEnrollCameraActive] = useState(false)
-  const [enrollProgress, setEnrollProgress] = useState(0)
-  const [biometricsVerificationError, setBiometricsVerificationError] = useState(null)
-  const [biometricMatchScore, setBiometricMatchScore] = useState(null)
   const [captureStatusText, setCaptureStatusText] = useState('')
 
   // Refs
@@ -112,31 +97,7 @@ function App() {
       .catch(err => console.error("Erro ao salvar histórico no localforage:", err))
   }, [attendanceHistory, isHistoryLoaded])
 
-  // --- AI MODEL LOADING EFFECT ---
-  useEffect(() => {
-    const loadAiModels = async () => {
-      if (isModelsLoaded || isLoadingModels) return
-      setIsLoadingModels(true)
-      setModelsError(null)
-      try {
-        if (!window.faceapi) throw new Error("Biblioteca de reconhecimento facial (face-api) não carregada.")
-        const faceapi = window.faceapi
-        const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL)
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-        console.log("Modelos de Inteligência Artificial carregados com sucesso!")
-        setIsModelsLoaded(true)
-      } catch (err) {
-        console.error("Falha ao carregar modelos de IA:", err)
-        setModelsError("Erro ao iniciar a Inteligência Facial. Verifique sua conexão com a internet.")
-      } finally {
-        setIsLoadingModels(false)
-      }
-    }
-    const delayTimer = setTimeout(loadAiModels, 1000)
-    return () => clearTimeout(delayTimer)
-  }, [])
+
 
   // --- CAMERA MANAGEMENT ---
   const startCamera = async () => {
@@ -176,66 +137,7 @@ function App() {
     }
   }
 
-  // --- ENROLLMENT CAMERA MANAGEMENT ---
-  const startEnrollCamera = async () => {
-    setFaceEnrollError(null)
-    setIsEnrollCameraActive(true)
-    setEnrollProgress(0)
-    stopCamera()
-    try {
-      const constraints = { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false }
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
-      streamRef.current = stream
-      setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream }, 150)
-    } catch (err) {
-      console.warn("Câmera de cadastro falhou, tentando fallback...", err)
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-        streamRef.current = stream
-        setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream }, 150)
-      } catch (errFallback) {
-        console.warn("Fallback de cadastro falhou, tentando simples...", errFallback)
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-          streamRef.current = stream
-          setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream }, 150)
-        } catch (errSimple) {
-          console.error("Todas as tentativas falharam:", errSimple)
-          setFaceEnrollError("Câmera real indisponível para cadastro.")
-          setIsEnrollCameraActive(false)
-        }
-      }
-    }
-  }
 
-  const stopEnrollCamera = () => {
-    stopCamera()
-    setIsEnrollCameraActive(false)
-    setEnrollProgress(0)
-  }
-
-  const handleEnrollFace = async () => {
-    if (isEnrollingFace) return
-    setIsEnrollingFace(true)
-    setFaceEnrollError(null)
-    try {
-      const video = videoRef.current
-      if (!video) throw new Error("Vídeo não inicializado.")
-      if (!window.faceapi) throw new Error("Biblioteca de IA (face-api.js) não carregada.")
-      const faceapi = window.faceapi
-      const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor()
-      if (!detection) throw new Error("Rosto não detectado. Fique sob boa iluminação e sem óculos escuros.")
-      const descriptorArray = Array.from(detection.descriptor)
-      localStorage.setItem('ponto_employee_face_descriptor', JSON.stringify(descriptorArray))
-      setSavedDescriptor(descriptorArray)
-      stopEnrollCamera()
-      setIsEnrollingFace(false)
-    } catch (err) {
-      console.error(err)
-      setFaceEnrollError(err.message || "Erro ao processar biometria.")
-      setIsEnrollingFace(false)
-    }
-  }
 
   const toggleCameraFacing = () => {
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user')
@@ -275,9 +177,6 @@ function App() {
   const handleRegisterPoint = async () => {
     if (isRegistering) return
     setIsRegistering(true)
-    setBiometricsVerificationError(null)
-    setBiometricMatchScore(null)
-    setFaceMatchDistance(null)
     setCaptureStatusText("Obtendo localização GPS...")
 
     let location = null
@@ -631,11 +530,6 @@ function App() {
         <ProfileForm
           employeeName={employeeName} setEmployeeName={setEmployeeName}
           employeeRole={employeeRole} setEmployeeRole={setEmployeeRole}
-          isEnrollCameraActive={isEnrollCameraActive}
-          startEnrollCamera={startEnrollCamera} stopEnrollCamera={stopEnrollCamera}
-          isEnrollingFace={isEnrollingFace} faceEnrollError={faceEnrollError}
-          handleEnrollFace={handleEnrollFace} savedDescriptor={savedDescriptor}
-          setSavedDescriptor={setSavedDescriptor} videoRef={videoRef}
           saveProfile={saveProfile} playBuzzerSound={playBuzzerSound}
         />
       )}
@@ -649,10 +543,6 @@ function App() {
           geolocation={geolocation} geoError={geoError}
           getCoordinates={triggerGetCoordinates} toggleCameraFacing={toggleCameraFacing}
           handleRegisterPoint={handleRegisterPoint} cameraError={cameraError}
-          biometricsVerificationError={biometricsVerificationError}
-          setBiometricsVerificationError={setBiometricsVerificationError}
-          faceMatchDistance={faceMatchDistance} setFaceMatchDistance={setFaceMatchDistance}
-          handleReset={handleReset} setIsConfiguring={setIsConfiguring}
         />
       )}
       {stampedPhoto && successRecord && (

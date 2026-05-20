@@ -20,82 +20,8 @@ export default function CameraView({
   getCoordinates,
   toggleCameraFacing,
   handleRegisterPoint,
-  cameraError,
-  biometricsVerificationError,
-  setBiometricsVerificationError,
-  faceMatchDistance,
-  setFaceMatchDistance,
-  handleReset,
-  setIsConfiguring
+  cameraError
 }) {
-  if (biometricsVerificationError) {
-    /* BIOMETRIC VERIFICATION ERROR PANEL */
-    return (
-      <div className="glass-panel" style={{ border: '2px solid var(--error)', boxShadow: '0 0 25px rgba(239, 68, 68, 0.2)', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', textAlign: 'center', padding: '10px 0' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', border: '2px solid var(--error)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'pulse 2s infinite' }}>
-            <XCircle size={32} style={{ color: 'var(--error)' }} />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--error)', marginBottom: '8px' }}>
-              Biometria Divergente!
-            </h2>
-            <p style={{ color: 'var(--text-main)', fontSize: '14px', lineHeight: '1.5', padding: '0 8px' }}>
-              {biometricsVerificationError}
-            </p>
-          </div>
-          
-          <div style={{ background: 'rgba(0, 0, 0, 0.2)', width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '13px', textAlign: 'left' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Status:</span>
-              <span style={{ color: 'var(--error)', fontWeight: '600' }}>Bloqueado por Incompatibilidade</span>
-            </div>
-            {faceMatchDistance !== null && (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Divergência Euclidiana:</span>
-                  <span style={{ fontWeight: '600', color: '#fff' }}>{faceMatchDistance.toFixed(4)} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>(limite 0.58)</span></span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Similaridade Calculada:</span>
-                  <span style={{ fontWeight: '600', color: 'var(--error)' }}>
-                    {Math.max(0, Math.round((1 - faceMatchDistance) * 100))}%
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-          
-          <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '8px' }}>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => {
-                setBiometricsVerificationError(null)
-                handleReset()
-                setIsConfiguring(true) // Guide to profile in case they need to re-enroll
-              }}
-              style={{ flex: 1, padding: '12px 10px', fontSize: '14px' }}
-            >
-              Recadastrar Perfil
-            </button>
-            
-            <button 
-              className="btn btn-primary"
-              onClick={() => {
-                setBiometricsVerificationError(null)
-                setFaceMatchDistance(null)
-                startCamera() // Restart camera
-              }}
-              style={{ flex: 2, padding: '12px 10px', fontSize: '14px', background: 'linear-gradient(135deg, var(--error), var(--warning))', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)' }}
-            >
-              Tentar Novamente
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   /* NORMAL CAMERA WINDOW & TRACKER */
   return (
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
