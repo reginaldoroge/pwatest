@@ -430,16 +430,6 @@ function App() {
     const handleRegisterPoint = async () => {
     if (isRegistering) return
 
-    // 0. Verification check for face biometrics
-    if (!savedDescriptor) {
-      alert("Para bater ponto, você precisa primeiro cadastrar sua biometria facial no seu perfil!")
-      setIsRegistering(false)
-      setIsCameraActive(false)
-      stopCamera()
-      setIsConfiguring(true) // Redirect to profile
-      return
-    }
-
     setIsRegistering(true)
     setBiometricsVerificationError(null)
     setBiometricMatchScore(null)
@@ -528,8 +518,8 @@ function App() {
         streamRef.current = null
       }
 
-      // 2. Open Front Camera for Selfie & Biometrics
-      setCaptureStatusText("Iniciando Câmera Frontal (Selfie)...")
+      // 2. Open Front Camera for Selfie (Optimized & Fast)
+      setCaptureStatusText("Capturando Câmera Frontal (Selfie)...")
       const frontStream = await getCameraStream('user')
       streamRef.current = frontStream
       
@@ -540,57 +530,19 @@ function App() {
           videoRef.current.onloadedmetadata = () => {
             videoRef.current.play().then(resolve).catch(resolve)
           }
-          setTimeout(resolve, 1000) // safety fallback timeout
+          setTimeout(resolve, 600) // fast safety fallback timeout
         })
       }
 
-      setCaptureStatusText("Verificando Biometria Facial...")
-      // Allow automatic exposure and focus of front camera to settle
-      await new Promise(resolve => setTimeout(resolve, 800))
+      // Allow automatic exposure and focus of front camera to settle very quickly
+      await new Promise(resolve => setTimeout(resolve, 300))
 
       if (!videoRef.current) {
         throw new Error("Elemento de vídeo não inicializado.")
       }
 
-      // Perform faceapi face detection
-      if (!window.faceapi) {
-        throw new Error("Biblioteca de Inteligência Facial (face-api.js) não disponível.")
-      }
-      const faceapi = window.faceapi
-
-      const activeDetection = await faceapi.detectSingleFace(videoRef.current)
-        .withFaceLandmarks()
-        .withFaceDescriptor()
-
-      if (!activeDetection) {
-        setBiometricsVerificationError("Nenhum rosto detectado pela câmera! Centralize bem seu rosto na tela sob boa luz e tente novamente.")
-        setIsRegistering(false)
-        stopCamera()
-        setIsCameraActive(false)
-        return
-      }
-
-      // Compare vector distance
-      distanceValue = faceapi.euclideanDistance(savedDescriptor, activeDetection.descriptor)
-      setFaceMatchDistance(distanceValue)
-
-      if (distanceValue > 0.58) {
-        const currentSim = Math.max(0, Math.round((1 - distanceValue) * 100))
-        setBiometricsVerificationError(`Biometria Divergente! O rosto ativo na câmera não coincide com a biometria cadastrada no perfil (Similaridade: ${currentSim}%).`)
-        setIsRegistering(false)
-        stopCamera()
-        setIsCameraActive(false)
-        return
-      }
-
-      similarityScore = Math.round((1 - distanceValue) * 100)
-      setBiometricMatchScore(similarityScore)
-
-      setCaptureStatusText(`Biometria Aprovada! (${similarityScore}% similaridade)`)
-      
       // Take Front Selfie frame
       selfieCtx.drawImage(videoRef.current, 0, 0, 640, 480)
-      await new Promise(resolve => setTimeout(resolve, 800))
 
       // 3. Stop Front Camera
       setCaptureStatusText("Alternando para Câmera Traseira (Ambiente)...")
@@ -602,8 +554,8 @@ function App() {
         videoRef.current.srcObject = null
       }
 
-      // Wait 500ms to let the hardware release lock (essential for mobile devices)
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Wait 300ms to let the hardware release lock (essential for mobile devices)
+      await new Promise(resolve => setTimeout(resolve, 300))
 
       // 4. Open Back Camera for Environment
       try {
@@ -615,13 +567,13 @@ function App() {
             videoRef.current.onloadedmetadata = () => {
               videoRef.current.play().then(resolve).catch(resolve)
             }
-            setTimeout(resolve, 1000)
+            setTimeout(resolve, 600)
           })
         }
 
         setCaptureStatusText("Capturando foto do ambiente...")
-        // Settle delay for focus / exposure
-        await new Promise(resolve => setTimeout(resolve, 800))
+        // Settle delay for focus / exposure (fast)
+        await new Promise(resolve => setTimeout(resolve, 300))
 
         if (videoRef.current) {
           envCtx.drawImage(videoRef.current, 0, 0, 640, 480)
@@ -795,8 +747,8 @@ function App() {
       ctx.textAlign = 'center'
       ctx.fillText(userBadgeText, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2)
 
-      // Draw Biometric Verification Badge below User Badge
-      const bioBadgeText = `🛡️ BIOMETRIA: ${similarityScore}%`
+      // Draw Biometric/Security Badge below User Badge
+      const bioBadgeText = "🛡️ FOTO DUPLA: CONFIRMADA"
       ctx.font = 'bold 10px system-ui, -apple-system, sans-serif'
       const bioTextWidth = ctx.measureText(bioBadgeText).width
       const bioBadgePadding = 6
@@ -836,7 +788,7 @@ function App() {
         mapsLink: location.mapsLink,
         address: location.address || '',
         photo: dataUrl,
-        biometricScore: similarityScore,
+        biometricScore: null,
         isMocked: false
       }
 
@@ -1118,7 +1070,7 @@ function App() {
               type="submit" 
               className="btn btn-primary" 
               style={{ marginTop: '20px' }}
-              disabled={!employeeName.trim() || !savedDescriptor || isEnrollCameraActive}
+              disabled={!employeeName.trim() || isEnrollCameraActive}
             >
               <Check size={18} /> Salvar e Continuar
             </button>
