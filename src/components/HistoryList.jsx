@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Trash2 } from 'lucide-react'
+import { MapPin, Trash2, Clock, CloudOff, CheckCircle2, RefreshCw, ImageOff } from 'lucide-react'
 
 export default function HistoryList({
   isConfiguring,
@@ -10,95 +10,129 @@ export default function HistoryList({
 }) {
   if (isConfiguring) return null
 
-  return (
-    <div className="glass-panel" style={{ marginTop: '20px', paddingBottom: '12px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Calendar size={18} style={{ color: 'var(--primary)' }} />
-          <h2>Histórico Local</h2>
-        </div>
-        <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '12px', color: 'var(--text-muted)' }}>
-          {attendanceHistory.length} registros
-        </span>
-      </div>
+  // Group records by date
+  const groupedByDate = attendanceHistory.reduce((groups, item) => {
+    const date = item.date
+    if (!groups[date]) groups[date] = []
+    groups[date].push(item)
+    return groups
+  }, {})
 
+  const dateKeys = Object.keys(groupedByDate)
+  const totalSynced = attendanceHistory.filter(r => r.syncStatus === 'synced').length
+  const totalPending = attendanceHistory.filter(r => r.syncStatus === 'pending').length
+
+  return (
+    <div className="history-container">
+      {/* Stats Bar */}
+      {attendanceHistory.length > 0 && (
+        <div className="history-stats-bar">
+          <div className="history-stat">
+            <span className="history-stat-number">{attendanceHistory.length}</span>
+            <span className="history-stat-label">Total</span>
+          </div>
+          <div className="history-stat-divider" />
+          <div className="history-stat">
+            <CheckCircle2 size={13} style={{ color: 'var(--success)' }} />
+            <span className="history-stat-number" style={{ color: 'var(--success)' }}>{totalSynced}</span>
+            <span className="history-stat-label">Sincronizados</span>
+          </div>
+          {totalPending > 0 && (
+            <>
+              <div className="history-stat-divider" />
+              <div className="history-stat">
+                <CloudOff size={13} style={{ color: '#f59e0b' }} />
+                <span className="history-stat-number" style={{ color: '#f59e0b' }}>{totalPending}</span>
+                <span className="history-stat-label">Pendentes</span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Empty State */}
       {attendanceHistory.length === 0 ? (
-        <p style={{ textAlign: 'center', padding: '24px 0', fontSize: '13px' }}>
-          Nenhum ponto registrado neste dispositivo ainda.
-        </p>
+        <div className="history-empty-state">
+          <div className="history-empty-icon">
+            <ImageOff size={32} strokeWidth={1.5} />
+          </div>
+          <h3 className="history-empty-title">Nenhum registro ainda</h3>
+          <p className="history-empty-desc">
+            Seus comprovantes de ponto aparecerão aqui após o primeiro registro.
+          </p>
+        </div>
       ) : (
-        <div className="history-list">
-          {attendanceHistory.map((item) => (
-            <div 
-              key={item.id} 
-              className="history-card"
-              onClick={() => {
-                setStampedPhoto(item.photo)
-                setSuccessRecord(item)
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <img src={item.photo} alt="Ponto" className="history-img-thumb" />
-              
-              <div className="history-info">
-                <span className="history-time">{item.time}</span>
-                <span style={{ fontSize: '12px', fontWeight: '500' }}>{item.date}</span>
-                <div className="history-details">
-                  <MapPin size={10} style={{ color: 'var(--secondary)' }} />
-                  <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px' }} title={item.address || `${item.latitude.toFixed(4)}, ${item.longitude.toFixed(4)}`}>
-                    {item.address || `${item.latitude.toFixed(4)}, ${item.longitude.toFixed(4)}`}
-                  </span>
-                </div>
+        <div className="history-groups">
+          {dateKeys.map((date) => (
+            <div key={date} className="history-date-group">
+              {/* Date Header */}
+              <div className="history-date-header">
+                <span className="history-date-label">{date}</span>
+                <span className="history-date-count">{groupedByDate[date].length} registro{groupedByDate[date].length > 1 ? 's' : ''}</span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                {item.syncStatus === 'pending' ? (
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (handleSyncRecord) handleSyncRecord(item)
+              {/* Cards */}
+              <div className="history-cards-list">
+                {groupedByDate[date].map((item) => (
+                  <div
+                    key={item.id}
+                    className="history-card-v2"
+                    onClick={() => {
+                      setStampedPhoto(item.photo)
+                      setSuccessRecord(item)
                     }}
-                    className="badge" 
-                    style={{
-                      background: 'rgba(245, 158, 11, 0.12)',
-                      color: '#f59e0b',
-                      border: '1px solid rgba(245, 158, 11, 0.25)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '10px',
-                      fontWeight: 'bold',
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
-                    }}
-                    title="Clique para tentar sincronizar agora"
                   >
-                    ⏳ Pendente
-                  </button>
-                ) : (
-                  <span className="badge badge-success" style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    padding: '2px 6px',
-                    borderRadius: '4px'
-                  }}>
-                    ☁️ Sincronizado
-                  </span>
-                )}
-                <button 
-                  className="btn btn-secondary"
-                  onClick={(e) => handleDeleteRecord(item.id, e)}
-                  style={{ width: 'auto', padding: '4px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', border: 'none' }}
-                  title="Excluir"
-                >
-                  <Trash2 size={12} />
-                </button>
+                    {/* Photo */}
+                    <div className="history-card-photo-wrap">
+                      <img src={item.photo} alt="Ponto" className="history-card-photo" />
+                      <div className="history-card-photo-overlay">
+                        <Clock size={12} />
+                        <span>{item.time}</span>
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div className="history-card-body">
+                      <div className="history-card-top-row">
+                        <span className="history-card-time-main">{item.time}</span>
+                        {item.syncStatus === 'pending' ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (handleSyncRecord) handleSyncRecord(item)
+                            }}
+                            className="history-sync-badge history-sync-pending"
+                            title="Clique para sincronizar"
+                          >
+                            <RefreshCw size={10} />
+                            Pendente
+                          </button>
+                        ) : (
+                          <span className="history-sync-badge history-sync-done">
+                            <CheckCircle2 size={10} />
+                            Sincronizado
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="history-card-address">
+                        <MapPin size={11} style={{ color: 'var(--secondary)', flexShrink: 0 }} />
+                        <span>{item.address || `${item.latitude.toFixed(4)}, ${item.longitude.toFixed(4)}`}</span>
+                      </div>
+
+                      <div className="history-card-bottom-row">
+                        <span className="history-card-employee">{item.employeeName}</span>
+                        <button
+                          className="history-delete-btn"
+                          onClick={(e) => handleDeleteRecord(item.id, e)}
+                          title="Excluir registro"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
