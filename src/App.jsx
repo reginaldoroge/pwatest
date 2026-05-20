@@ -18,7 +18,8 @@ import {
   Fingerprint,
   AlertCircle,
   XCircle,
-  X
+  X,
+  Volume2
 } from 'lucide-react'
 import './App.css'
 
@@ -427,6 +428,53 @@ function App() {
     setIsConfiguring(false)
   }
 
+  const playBuzzerSound = (isSuccess = true) => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext
+      if (!AudioContext) return
+      const ctx = new AudioContext()
+      
+      if (isSuccess) {
+        // Success: Double premium high-pitched beep (880Hz)
+        const playBeep = (delay, freq, duration) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'sine'
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + delay)
+          
+          // Smooth volume ramp to avoid clicking noises
+          gain.gain.setValueAtTime(0.08, ctx.currentTime + delay)
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + duration)
+          
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(ctx.currentTime + delay)
+          osc.stop(ctx.currentTime + delay + duration)
+        }
+        // First beep
+        playBeep(0, 880, 0.08)
+        // Second beep shortly after
+        playBeep(0.12, 880, 0.12)
+      } else {
+        // Error: Harsh low-pitched buzzer sound (140Hz sawtooth wave)
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sawtooth'
+        osc.frequency.setValueAtTime(140, ctx.currentTime)
+        
+        gain.gain.setValueAtTime(0.12, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35)
+        
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start()
+        osc.stop(ctx.currentTime + 0.35)
+      }
+    } catch (e) {
+      console.warn("Web Audio API not supported or blocked by browser policies", e)
+    }
+  }
+
     const handleRegisterPoint = async () => {
     if (isRegistering) return
 
@@ -794,8 +842,10 @@ function App() {
 
       setAttendanceHistory(prev => [newRecord, ...prev])
       setSuccessRecord(newRecord)
+      playBuzzerSound(true)
     } catch (err) {
       console.error("Erro ao registrar ponto:", err)
+      playBuzzerSound(false)
       alert("Erro técnico ao capturar e processar. Detalhes: " + err.message)
     } finally {
       setIsRegistering(false)
@@ -1064,6 +1114,35 @@ function App() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* SOUND SETTINGS CONTAINER */}
+            <div className="form-group" style={{ marginTop: '20px', padding: '16px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+              <label className="form-label" style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Volume2 size={16} style={{ color: 'var(--primary)' }} />
+                Feedback Sonoro (Buzzer)
+              </label>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                O sistema emite alertas sonoros ao finalizar o registro. Teste os sons abaixo:
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  onClick={() => playBuzzerSound(true)}
+                >
+                  🔊 Testar Sucesso
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  onClick={() => playBuzzerSound(false)}
+                >
+                  🔊 Testar Erro
+                </button>
+              </div>
             </div>
             
             <button 
