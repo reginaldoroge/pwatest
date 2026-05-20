@@ -1254,6 +1254,35 @@ p {
   color: var(--warning);
 }
 
+.install-banner-perm-icon.perm-denied {
+  background: oklch(0.55 0.2 25 / 12%);
+  color: var(--error);
+}
+
+.install-banner-settings-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.install-banner-settings-hint svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--error);
+}
+
+.install-banner-settings-hint strong {
+  color: var(--text-main);
+}
+
 .install-banner-perm-info {
   flex: 1;
   display: flex;

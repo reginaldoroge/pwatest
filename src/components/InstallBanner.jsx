@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Download, Camera, MapPin, Bell, CheckCircle2, Shield, X, ChevronRight } from 'lucide-react'
+import { Download, Camera, MapPin, Bell, CheckCircle2, Shield, X, ChevronRight, Settings } from 'lucide-react'
 
 export default function InstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstalled, setIsInstalled] = useState(false)
   const [showBanner, setShowBanner] = useState(false)
-  const [dismissed, setDismissed] = useState(false)
   const [permissions, setPermissions] = useState({
     camera: 'unknown',
     location: 'unknown',
@@ -13,16 +12,20 @@ export default function InstallBanner() {
   })
   const [isRequesting, setIsRequesting] = useState(false)
   const [allGranted, setAllGranted] = useState(false)
+  const [showSettingsHint, setShowSettingsHint] = useState(false)
 
-  // Check if app is already installed
+  // Check if app is already installed and if permissions were previously completed
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
       || window.navigator.standalone === true
     setIsInstalled(isStandalone)
 
-    // Check if user already dismissed
-    const wasDismissed = sessionStorage.getItem('ponto_install_dismissed')
-    if (wasDismissed) setDismissed(true)
+    // Check if user completed the permission flow in a previous session
+    const permissionsCompleted = localStorage.getItem('ponto_permissions_completed')
+    if (permissionsCompleted) {
+      // Verify permissions are still granted (user might have revoked in browser settings)
+      // The interval check will handle hiding the banner if they're still valid
+    }
   }, [])
 
   // Listen for beforeinstallprompt
@@ -82,17 +85,31 @@ export default function InstallBanner() {
 
   // Determine if banner should show
   useEffect(() => {
-    if (dismissed) { setShowBanner(false); return }
-    
-    const needsInstall = !isInstalled && deferredPrompt
+    // If all required permissions are granted, allow hiding
     const needsPermissions = permissions.camera !== 'granted' || permissions.location !== 'granted'
-    
+    const needsInstall = !isInstalled && deferredPrompt
+    const permissionsCompleted = localStorage.getItem('ponto_permissions_completed')
+
+    // If permissions were completed in a previous session and still granted, hide
+    if (permissionsCompleted && !needsPermissions && !needsInstall) {
+      setShowBanner(false)
+      return
+    }
+
+    // Show banner if permissions are needed or install is needed
     if (needsInstall || needsPermissions) {
       setShowBanner(true)
+      // Clear the completed flag since permissions are no longer all granted
+      localStorage.removeItem('ponto_permissions_completed')
+      // Check if any permission is denied (blocked) to show settings hint
+      const anyDenied = permissions.camera === 'denied' || permissions.location === 'denied'
+      setShowSettingsHint(anyDenied)
     } else {
+      // All granted - mark as completed and hide
+      localStorage.setItem('ponto_permissions_completed', 'true')
       setShowBanner(false)
     }
-  }, [isInstalled, deferredPrompt, permissions, dismissed])
+  }, [isInstalled, deferredPrompt, permissions])
 
   const handleInstall = async () => {
     if (!deferredPrompt) return
@@ -107,8 +124,8 @@ export default function InstallBanner() {
   const handleRequestPermissions = async () => {
     setIsRequesting(true)
 
-    // Request Camera
-    if (permissions.camera !== 'granted') {
+    // Request Camera (only if not denied/blocked)
+    if (permissions.camera !== 'granted' && permissions.camera !== 'denied') {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
         stream.getTracks().forEach(t => t.stop())
@@ -117,8 +134,8 @@ export default function InstallBanner() {
       }
     }
 
-    // Request Geolocation
-    if (permissions.location !== 'granted') {
+    // Request Geolocation (only if not denied/blocked)
+    if (permissions.location !== 'granted' && permissions.location !== 'denied') {
       try {
         await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
@@ -128,7 +145,7 @@ export default function InstallBanner() {
       }
     }
 
-    // Request Notifications
+    // Request Notifications (only if prompt)
     if (permissions.notifications === 'prompt' || permissions.notifications === 'default') {
       try {
         await Notification.requestPermission()
@@ -138,11 +155,27 @@ export default function InstallBanner() {
     }
 
     setIsRequesting(false)
-  }
 
-  const handleDismiss = () => {
-    setDismissed(true)
-    sessionStorage.setItem('ponto_install_dismissed', 'true')
+    // Re-check permissions after request to update UI immediately
+    setTimeout(async () => {
+      const perms = { camera: 'unknown', location: 'unknown', notifications: 'unknown' }
+      try {
+        const cam = await navigator.permissions.query({ name: 'camera' })
+        perms.camera = cam.state
+      } catch { perms.camera = 'prompt' }
+      try {
+        const geo = await navigator.permissions.query({ name: 'geolocation' })
+        perms.location = geo.state
+      } catch { perms.location = 'prompt' }
+      try {
+        if ('Notification' in window) {
+          perms.notifications = Notification.permission === 'default' ? 'prompt' : Notification.permission
+        } else {
+          perms.notifications = 'unavailable'
+        }
+      } catch { perms.notifications = 'unavailable' }
+      setPermissions(perms)
+    }, 500)
   }
 
   if (!showBanner) return null
@@ -173,13 +206,21 @@ export default function InstallBanner() {
 
   const needsInstall = !isInstalled && deferredPrompt
 
+  // Only allow dismiss when all required permissions are granted
+  const canDismiss = allGranted
+
   return (
     <div className="install-banner-overlay">
       <div className="install-banner">
-        {/* Close button */}
-        <button className="install-banner-close" onClick={handleDismiss} title="Fechar">
-          <X size={18} />
-        </button>
+        {/* Close button - only show when all permissions granted */}
+        {canDismiss && (
+          <button className="install-banner-close" onClick={() => {
+            localStorage.setItem('ponto_permissions_completed', 'true')
+            setShowBanner(false)
+          }} title="Fechar">
+            <X size={18} />
+          </button>
+        )}
 
         {/* Header */}
         <div className="install-banner-header">
@@ -188,7 +229,9 @@ export default function InstallBanner() {
           </div>
           <div>
             <h3 className="install-banner-title">Ponto Seguro</h3>
-            <p className="install-banner-subtitle">Configure o app para melhor experiência</p>
+            <p className="install-banner-subtitle">
+              {allGranted ? 'Tudo configurado!' : 'Permissões necessárias para o funcionamento'}
+            </p>
           </div>
         </div>
 
@@ -216,7 +259,7 @@ export default function InstallBanner() {
           <div className="install-banner-perm-list">
             {permissionItems.map((item) => (
               <div key={item.key} className="install-banner-perm-item">
-                <div className={`install-banner-perm-icon ${item.status === 'granted' ? 'perm-granted' : 'perm-pending'}`}>
+                <div className={`install-banner-perm-icon ${item.status === 'granted' ? 'perm-granted' : item.status === 'denied' ? 'perm-denied' : 'perm-pending'}`}>
                   {item.icon}
                 </div>
                 <div className="install-banner-perm-info">
@@ -238,7 +281,18 @@ export default function InstallBanner() {
             ))}
           </div>
 
-          {!allGranted && (
+          {/* Settings hint for blocked permissions */}
+          {showSettingsHint && (
+            <div className="install-banner-settings-hint">
+              <Settings size={14} />
+              <span>
+                Permissão bloqueada. Acesse as configurações do navegador para desbloquear:
+                <strong> Configurações → Privacidade → Permissões do site</strong>
+              </span>
+            </div>
+          )}
+
+          {!allGranted && !showSettingsHint && (
             <button
               className="install-banner-grant-btn"
               onClick={handleRequestPermissions}
@@ -259,7 +313,10 @@ export default function InstallBanner() {
           )}
 
           {allGranted && !needsInstall && (
-            <button className="install-banner-done-btn" onClick={handleDismiss}>
+            <button className="install-banner-done-btn" onClick={() => {
+              localStorage.setItem('ponto_permissions_completed', 'true')
+              setShowBanner(false)
+            }}>
               <CheckCircle2 size={16} />
               Tudo pronto! Continuar
             </button>
