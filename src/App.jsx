@@ -106,8 +106,27 @@ function App() {
       .catch(err => console.error("Erro ao salvar histórico no localforage:", err))
   }, [attendanceHistory, isHistoryLoaded])
 
+  // --- BROWSER BACK BUTTON SUPPORT ---
+  useEffect(() => {
+    if (isConfiguring) return
 
+    // Push state when navigating to sub-screens
+    if (currentScreen !== 'menu') {
+      window.history.pushState({ screen: currentScreen }, '')
+    }
 
+    const handlePopState = () => {
+      if (stampedPhoto) {
+        setStampedPhoto(null)
+        setSuccessRecord(null)
+      } else if (currentScreen !== 'menu') {
+        navigateToMenu()
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [currentScreen, isConfiguring])
   // --- CAMERA MANAGEMENT ---
   const startCamera = async () => {
     setCameraError(null)
@@ -638,11 +657,17 @@ function App() {
 
           {/* Receipt after registration */}
           {stampedPhoto && successRecord && (
-            <ReceiptView
-              stampedPhoto={stampedPhoto} successRecord={successRecord}
-              handleShareWhatsApp={handleShareWhatsApp} handleDownload={handleDownload}
-              handleReset={handleReset}
-            />
+            <>
+              <button className="nav-back-btn" onClick={handleReset} id="btn-back-ponto-receipt">
+                <ArrowLeft size={16} />
+                <span>Voltar ao Menu</span>
+              </button>
+              <ReceiptView
+                stampedPhoto={stampedPhoto} successRecord={successRecord}
+                handleShareWhatsApp={handleShareWhatsApp} handleDownload={handleDownload}
+                handleReset={handleReset}
+              />
+            </>
           )}
         </div>
       )}
