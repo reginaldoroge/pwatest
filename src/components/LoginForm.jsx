@@ -73,6 +73,7 @@ export default function LoginForm({
           <div style={{ position: 'relative' }}>
             <input 
               type="text" 
+              inputMode="numeric"
               className="form-input" 
               placeholder="000.000.000-00" 
               value={cpf}
@@ -147,6 +148,7 @@ export default function LoginForm({
           </label>
           <input 
             type="password" 
+            inputMode="numeric"
             className="form-input" 
             placeholder="Digite sua senha de segurança" 
             value={password}
