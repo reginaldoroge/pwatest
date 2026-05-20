@@ -1,0 +1,158 @@
+/* ======================================
+   CAMERA & CLOCK STYLES
+   ====================================== */
+
+/* Dynamic Live Clock */
+.clock-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 16px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, oklch(0.78 0.15 75 / 10%), oklch(0.66 0.09 55 / 10%));
+  border-radius: var(--border-radius-lg);
+  border: 1px solid oklch(0.32 0.022 62 / 20%);
+}
+
+.clock-time {
+  font-size: 42px;
+  font-weight: 700;
+  font-feature-settings: "tnum";
+  letter-spacing: -1px;
+  background: linear-gradient(to right, var(--primary), oklch(0.94 0.012 75));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.clock-date {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Camera Preview Window */
+.camera-window {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  position: relative;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  background: #000;
+  border: 2px solid var(--card-border);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  margin-bottom: 20px;
+}
+
+.camera-stream {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Photo Captured Preview */
+.photo-preview {
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-lg);
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 25px var(--primary-glow);
+}
+
+/* Scanner Laser Animation */
+.scanner-laser {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, transparent, var(--secondary), transparent);
+  box-shadow: 0 0 8px var(--secondary);
+  animation: scan 2s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes scan {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+/* Camera Corners Accent */
+.camera-corners::before,
+.camera-corners::after,
+.camera-corners span::before,
+.camera-corners span::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--primary);
+  border-style: solid;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 0 8px var(--primary);
+}
+
+.camera-corners::before {
+  top: 12px;
+  left: 12px;
+  border-width: 3px 0 0 3px;
+  border-top-left-radius: 6px;
+}
+
+.camera-corners::after {
+  top: 12px;
+  right: 12px;
+  border-width: 3px 3px 0 0;
+  border-top-right-radius: 6px;
+}
+
+.camera-corners span::before {
+  bottom: 12px;
+  left: 12px;
+  border-width: 0 0 3px 3px;
+  border-bottom-left-radius: 6px;
+}
+
+.camera-corners span::after {
+  bottom: 12px;
+  right: 12px;
+  border-width: 0 3px 3px 0;
+  border-bottom-right-radius: 6px;
+}
+
+/* Overlay Camera Info Card */
+.camera-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(15, 23, 42, 0.75);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}
+
+.pulse-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--error);
+  box-shadow: 0 0 8px var(--error);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}

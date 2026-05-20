@@ -1,0 +1,387 @@
+/* ======================================
+   INSTALL BANNER STYLES
+   ====================================== */
+
+.install-banner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 13, 22, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9998;
+  animation: bannerOverlayIn 0.3s ease-out;
+}
+
+@keyframes bannerOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.install-banner {
+  width: 100%;
+  max-width: 420px;
+  background: oklch(0.16 0.016 62);
+  border: 1px solid var(--card-border);
+  border-radius: 20px 20px 12px 12px;
+  padding: 24px 20px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4);
+  animation: bannerSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bannerSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.install-banner-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.install-banner-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+/* Header */
+.install-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.install-banner-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid oklch(0.78 0.15 75 / 30%);
+  box-shadow: 0 4px 12px oklch(0.78 0.15 75 / 15%);
+  flex-shrink: 0;
+}
+
+.install-banner-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.install-banner-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.install-banner-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Install Button */
+.install-banner-install-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid oklch(0.78 0.15 75 / 25%);
+  background: linear-gradient(135deg, oklch(0.78 0.15 75 / 12%), oklch(0.66 0.09 55 / 8%));
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+.install-banner-install-btn:hover {
+  border-color: oklch(0.78 0.15 75 / 45%);
+  background: linear-gradient(135deg, oklch(0.78 0.15 75 / 18%), oklch(0.66 0.09 55 / 12%));
+  transform: translateY(-1px);
+}
+
+.install-banner-install-btn:active {
+  transform: translateY(0);
+}
+
+.install-banner-install-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.install-banner-install-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.install-banner-install-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.install-banner-install-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.install-banner-arrow {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Permissions Section */
+.install-banner-permissions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.install-banner-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.install-banner-perm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.install-banner-perm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.install-banner-perm-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.install-banner-perm-icon.perm-granted {
+  background: oklch(0.65 0.12 145 / 12%);
+  color: var(--success);
+}
+
+.install-banner-perm-icon.perm-pending {
+  background: oklch(0.72 0.13 85 / 12%);
+  color: var(--warning);
+}
+
+.install-banner-perm-icon.perm-denied {
+  background: oklch(0.55 0.2 25 / 12%);
+  color: var(--error);
+}
+
+.install-banner-perm-item.perm-clickable {
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.install-banner-perm-item.perm-clickable:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.install-banner-perm-item.perm-clickable:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.perm-clickable-badge {
+  cursor: pointer;
+}
+
+.install-banner-perm-item.perm-clickable .perm-denied-badge {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.install-banner-settings-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.install-banner-settings-hint svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--error);
+}
+
+.install-banner-settings-hint strong {
+  color: var(--text-main);
+}
+
+.install-banner-perm-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.install-banner-perm-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.install-banner-perm-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.install-banner-perm-status {
+  flex-shrink: 0;
+}
+
+.perm-pending-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.perm-denied-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.perm-na-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+
+/* Grant Button */
+.install-banner-grant-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.install-banner-grant-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px oklch(0.78 0.15 75 / 40%);
+  filter: brightness(1.08);
+}
+
+.install-banner-grant-btn:active {
+  transform: translateY(0);
+}
+
+.install-banner-grant-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Done Button */
+.install-banner-done-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid oklch(0.65 0.12 145 / 30%);
+  background: oklch(0.65 0.12 145 / 10%);
+  color: var(--success);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.install-banner-done-btn:hover {
+  background: oklch(0.65 0.12 145 / 18%);
+  transform: translateY(-1px);
+}

@@ -1,0 +1,318 @@
+/* ======================================
+   HISTORY STYLES
+   ====================================== */
+
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+  padding-top: 8px;
+  animation: historyFadeIn 0.4s ease-out;
+}
+
+@keyframes historyFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stats Bar */
+.history-stats-bar {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.history-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+  border-radius: 12px;
+}
+
+.history-stat-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  font-feature-settings: "tnum";
+}
+
+.history-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-stat-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 8px 0;
+}
+
+/* Empty State */
+.history-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  animation: emptyFadeIn 0.5s ease-out;
+}
+
+@keyframes emptyFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.history-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, oklch(0.78 0.15 75 / 10%), oklch(0.66 0.09 55 / 8%));
+  border: 1px solid oklch(0.78 0.15 75 / 15%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+.history-empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.history-empty-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 260px;
+}
+
+/* Date Groups */
+.history-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.history-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-date-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.history-date-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.history-date-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Card V2 */
+.history-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-card-v2 {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.history-card-v2:hover {
+  border-color: var(--card-hover-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.history-card-v2:active {
+  transform: scale(0.99);
+}
+
+/* Photo Section */
+.history-card-photo-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.history-card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.history-card-photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, oklch(0.78 0.15 75 / 20%), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-card-v2:hover .history-card-photo-overlay {
+  opacity: 1;
+}
+
+/* Body Section */
+.history-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.history-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.history-card-time-main {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  font-feature-settings: "tnum";
+}
+
+/* Sync Badges */
+.history-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.history-sync-done {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.history-sync-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  cursor: pointer;
+}
+
+.history-sync-pending:hover {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+/* Address Row */
+.history-card-address {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.history-card-address span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Bottom Row */
+.history-card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.history-card-employee {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.06);
+  color: var(--error);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  flex-shrink: 0;
+}
+
+.history-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Badge status (legacy compat) */
+.badge-done {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.badge-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}

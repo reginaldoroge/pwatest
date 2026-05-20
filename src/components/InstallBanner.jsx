@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Download, Camera, MapPin, Bell, CheckCircle2, Shield, X, ChevronRight, Settings } from 'lucide-react'
+import { requestCameraStream, stopCameraStream } from '../utils/camera'
+import './InstallBanner.css'
 
 export default function InstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
@@ -144,8 +146,8 @@ export default function InstallBanner() {
   const requestSingle = async (key) => {
     if (key === 'camera' && permissions.camera !== 'granted') {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        stream.getTracks().forEach(t => t.stop())
+        const stream = await requestCameraStream('user')
+        stopCameraStream(stream)
         return true
       } catch (err) {
         console.warn('Camera permission denied:', err)
