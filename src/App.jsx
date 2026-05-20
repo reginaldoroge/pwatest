@@ -41,6 +41,7 @@ function App() {
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
 
   const [captureStatusText, setCaptureStatusText] = useState('')
+  const [showLogoffConfirm, setShowLogoffConfirm] = useState(false)
 
   // Refs
   const videoRef = useRef(null)
@@ -182,16 +183,19 @@ function App() {
   }
 
   const handleLogoff = () => {
-    if (confirm("Deseja realmente fazer logoff do sistema? Todos os seus dados locais de sessão serão desconectados.")) {
-      localStorage.removeItem('ponto_employee_cpf')
-      localStorage.removeItem('ponto_employee_name')
-      localStorage.removeItem('ponto_employee_role')
-      
-      setEmployeeCpf('')
-      setEmployeeName('')
-      setEmployeeRole('')
-      setIsConfiguring(true)
-    }
+    setShowLogoffConfirm(true)
+  }
+
+  const executeLogoff = () => {
+    localStorage.removeItem('ponto_employee_cpf')
+    localStorage.removeItem('ponto_employee_name')
+    localStorage.removeItem('ponto_employee_role')
+    
+    setEmployeeCpf('')
+    setEmployeeName('')
+    setEmployeeRole('')
+    setIsConfiguring(true)
+    setShowLogoffConfirm(false)
   }
 
   // --- DUAL-CAMERA REGISTRATION PIPELINE ---
@@ -584,6 +588,79 @@ function App() {
         <span>© 2026 Ponto Seguro PWA</span>
         <span>Tecnologia PWA Offline</span>
       </footer>
+
+      {/* CONFIRMATION LOGOFF MODAL */}
+      {showLogoffConfirm && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(9, 13, 22, 0.85)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          zIndex: 9999
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '340px',
+            width: '100%',
+            borderColor: 'var(--error)',
+            boxShadow: '0 8px 32px 0 rgba(239, 68, 68, 0.15)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '2px solid var(--error)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 8px'
+            }}>
+              <span style={{ fontSize: '24px' }}>🚪</span>
+            </div>
+            
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '8px' }}>
+                Confirmar Saída
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.5' }}>
+                Deseja realmente fazer logoff do sistema? Todos os seus dados de sessão local serão desconectados.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setShowLogoffConfirm(false)}
+                style={{ flex: 1, padding: '10px' }}
+              >
+                Cancelar
+              </button>
+              
+              <button 
+                className="btn btn-primary"
+                onClick={executeLogoff}
+                style={{ 
+                  flex: 1, 
+                  padding: '10px', 
+                  background: 'linear-gradient(135deg, var(--error), oklch(0.65 0.15 25 / 80%))',
+                  boxShadow: '0 4px 15px rgba(239, 68, 68, 0.2)' 
+                }}
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
