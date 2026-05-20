@@ -44,7 +44,7 @@ export default function LoginForm({
     }
 
     if (password !== '1234') {
-      setError('Senha incorreta (senha padrão temporária é 1234).')
+      setError('Senha de segurança incorreta.')
       playBuzzerSound(false)
       return
     }
@@ -148,7 +148,7 @@ export default function LoginForm({
           <input 
             type="password" 
             className="form-input" 
-            placeholder="Digite a senha (padrão: 1234)" 
+            placeholder="Digite sua senha de segurança" 
             value={password}
             onChange={(e) => {
               setPassword(e.target.value)
