@@ -54,7 +54,7 @@ export default function LoginForm({
   }
 
   return (
-    <div className="glass-panel" style={{ width: '100%', marginBottom: '20px', zIndex: 100 }}>
+    <div className="glass-panel" style={{ width: '100%', margin: 0, zIndex: 100 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <Shield className="text-primary" style={{ color: 'var(--primary)' }} />
         <h2 style={{ fontSize: '18px' }}>Login de Acesso</h2>

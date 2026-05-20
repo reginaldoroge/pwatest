@@ -551,7 +551,9 @@ function App() {
 
   return (
     <>
-      <Header employeeName={employeeName} employeeRole={employeeRole} onLogoff={handleLogoff} isOnline={isOnline} />
+      {!isConfiguring && (
+        <Header employeeName={employeeName} employeeRole={employeeRole} onLogoff={handleLogoff} isOnline={isOnline} />
+      )}
       {isConfiguring && (
         <div style={{ 
           flex: 1, 
