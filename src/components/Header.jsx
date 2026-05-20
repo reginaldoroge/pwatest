@@ -1,6 +1,6 @@
-import { User, Edit2 } from 'lucide-react'
+import { User, LogOut } from 'lucide-react'
 
-export default function Header({ employeeName, employeeRole, onEditProfile, isOnline }) {
+export default function Header({ employeeName, employeeRole, onLogoff, isOnline }) {
   return (
     <header className="profile-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -55,14 +55,26 @@ export default function Header({ employeeName, employeeRole, onEditProfile, isOn
           </span>
           {isOnline ? 'ONLINE' : 'MODO OFFLINE'}
         </div>
-        <button 
-          className="btn btn-secondary" 
-          style={{ width: 'auto', padding: '8px 12px', borderRadius: '10px' }}
-          onClick={onEditProfile}
-          title="Editar Perfil"
-        >
-          <Edit2 size={14} />
-        </button>
+        {employeeName && (
+          <button 
+            className="btn btn-secondary" 
+            style={{ 
+              width: 'auto', 
+              padding: '8px 12px', 
+              borderRadius: '10px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+              background: 'rgba(239, 68, 68, 0.04)'
+            }}
+            onClick={onLogoff}
+            title="Sair da Conta"
+          >
+            <LogOut size={14} style={{ color: 'var(--error)' }} />
+            <span style={{ fontSize: '12px', color: 'var(--error)', fontWeight: 'bold' }}>Sair</span>
+          </button>
+        )}
       </div>
     </header>
   )

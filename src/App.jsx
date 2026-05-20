@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Header from './components/Header'
 import Clock from './components/Clock'
-import ProfileForm from './components/ProfileForm'
+import LoginForm from './components/LoginForm'
 import CameraView from './components/CameraView'
 import ReceiptView from './components/ReceiptView'
 import HistoryList from './components/HistoryList'
@@ -19,9 +19,14 @@ localforage.config({
 
 function App() {
   // --- STATE ---
+  const [employeeCpf, setEmployeeCpf] = useState(() => localStorage.getItem('ponto_employee_cpf') || '')
   const [employeeName, setEmployeeName] = useState(() => localStorage.getItem('ponto_employee_name') || '')
   const [employeeRole, setEmployeeRole] = useState(() => localStorage.getItem('ponto_employee_role') || '')
-  const [isConfiguring, setIsConfiguring] = useState(() => !localStorage.getItem('ponto_employee_name'))
+  const [isConfiguring, setIsConfiguring] = useState(() => {
+    return !localStorage.getItem('ponto_employee_name') || 
+           !localStorage.getItem('ponto_employee_role') ||
+           !localStorage.getItem('ponto_employee_cpf')
+  })
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState(null)
   const [facingMode, setFacingMode] = useState('user') 
@@ -164,13 +169,29 @@ function App() {
     }
   }
 
-  // --- PROFILE MANAGEMENT ---
-  const saveProfile = (e) => {
-    e.preventDefault()
-    if (!employeeName.trim()) return
-    localStorage.setItem('ponto_employee_name', employeeName.trim())
-    localStorage.setItem('ponto_employee_role', employeeRole.trim() || 'Funcionário')
+  // --- SESSION & LOGIN MANAGEMENT ---
+  const handleLogin = (cpf, name, role) => {
+    localStorage.setItem('ponto_employee_cpf', cpf)
+    localStorage.setItem('ponto_employee_name', name)
+    localStorage.setItem('ponto_employee_role', role)
+    
+    setEmployeeCpf(cpf)
+    setEmployeeName(name)
+    setEmployeeRole(role)
     setIsConfiguring(false)
+  }
+
+  const handleLogoff = () => {
+    if (confirm("Deseja realmente fazer logoff do sistema? Todos os seus dados locais de sessão serão desconectados.")) {
+      localStorage.removeItem('ponto_employee_cpf')
+      localStorage.removeItem('ponto_employee_name')
+      localStorage.removeItem('ponto_employee_role')
+      
+      setEmployeeCpf('')
+      setEmployeeName('')
+      setEmployeeRole('')
+      setIsConfiguring(true)
+    }
   }
 
   // --- DUAL-CAMERA REGISTRATION PIPELINE ---
@@ -403,6 +424,7 @@ function App() {
 
       const baseRecord = {
         id: 'ponto_' + Date.now(),
+        employeeCpf,
         employeeName,
         employeeRole,
         date: formattedDate,
@@ -525,12 +547,11 @@ function App() {
 
   return (
     <>
-      <Header employeeName={employeeName} employeeRole={employeeRole} onEditProfile={() => setIsConfiguring(true)} isOnline={isOnline} />
+      <Header employeeName={employeeName} employeeRole={employeeRole} onLogoff={handleLogoff} isOnline={isOnline} />
       {isConfiguring && (
-        <ProfileForm
-          employeeName={employeeName} setEmployeeName={setEmployeeName}
-          employeeRole={employeeRole} setEmployeeRole={setEmployeeRole}
-          saveProfile={saveProfile} playBuzzerSound={playBuzzerSound}
+        <LoginForm
+          onLogin={handleLogin}
+          playBuzzerSound={playBuzzerSound}
         />
       )}
       {!isConfiguring && !stampedPhoto && <Clock />}
