@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { 
   Shield, 
   Check, 
-  Volume2, 
   User, 
   Hash, 
   Lock 
@@ -184,35 +183,6 @@ export default function LoginForm({
           <Check size={18} /> Entrar no Ponto Seguro
         </button>
       </form>
-
-      {/* SOUND SETTINGS CONTAINER */}
-      <div className="form-group" style={{ marginTop: '24px', padding: '16px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-        <label className="form-label" style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Volume2 size={16} style={{ color: 'var(--primary)' }} />
-          Verificação do Buzzer Offline
-        </label>
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>
-          O sistema gera tons sonoros integrados 100% offline. Teste o funcionamento do áudio:
-        </p>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ flex: 1, padding: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            onClick={() => playBuzzerSound(true)}
-          >
-            🔊 Som de Sucesso
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ flex: 1, padding: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            onClick={() => playBuzzerSound(false)}
-          >
-            🔊 Som de Falha
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
