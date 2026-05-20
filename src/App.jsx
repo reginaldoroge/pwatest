@@ -37,7 +37,6 @@ function App() {
   const [isCameraActive, setIsCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState(null)
   const [facingMode, setFacingMode] = useState('user') // 'user' (front) or 'environment' (back)
-  const [isMockCamera, setIsMockCamera] = useState(false)
   
   const [geolocation, setGeolocation] = useState(null)
   const [geoError, setGeoError] = useState(null)
@@ -64,9 +63,8 @@ function App() {
   const [faceEnrollError, setFaceEnrollError] = useState(null)
   const [faceMatchDistance, setFaceMatchDistance] = useState(null)
   
-  // New States for enrollment camera and mock tracking
+  // New States for enrollment camera and tracking
   const [isEnrollCameraActive, setIsEnrollCameraActive] = useState(false)
-  const [isEnrollMockCamera, setIsEnrollMockCamera] = useState(false)
   const [enrollProgress, setEnrollProgress] = useState(0)
   const [biometricsVerificationError, setBiometricsVerificationError] = useState(null)
   const [biometricMatchScore, setBiometricMatchScore] = useState(null)
@@ -145,7 +143,6 @@ function App() {
   const startCamera = async () => {
     setCameraError(null)
     setIsCameraActive(true)
-    setIsMockCamera(false)
     
     // Stop any existing stream
     stopCamera()
@@ -193,17 +190,11 @@ function App() {
           }
         } catch (errSimple) {
           console.error("Todas as tentativas de acesso à câmera falharam:", errSimple)
-          setCameraError("Câmera real indisponível. Você pode testar usando o botão de câmera simulada abaixo!")
+          setCameraError("Câmera real indisponível. Por favor, conceda permissões de câmera e tente novamente.")
           setIsCameraActive(false)
         }
       }
     }
-  }
-
-  const startMockCamera = () => {
-    setCameraError(null)
-    setIsCameraActive(true)
-    setIsMockCamera(true)
   }
 
   const stopCamera = () => {
@@ -217,7 +208,6 @@ function App() {
   const startEnrollCamera = async () => {
     setFaceEnrollError(null)
     setIsEnrollCameraActive(true)
-    setIsEnrollMockCamera(false)
     setEnrollProgress(0)
     
     // Stop any existing stream
@@ -273,18 +263,11 @@ function App() {
           }, 150)
         } catch (errSimple) {
           console.error("Todas as tentativas de acesso à câmera de cadastro falharam:", errSimple)
-          setFaceEnrollError("Câmera real indisponível para cadastro. Use a câmera simulada no botão abaixo!")
+          setFaceEnrollError("Câmera real indisponível para cadastro. Por favor, conceda permissões de câmera e tente novamente.")
           setIsEnrollCameraActive(false)
         }
       }
     }
-  }
-
-  const startEnrollMockCamera = () => {
-    setFaceEnrollError(null)
-    setIsEnrollCameraActive(true)
-    setIsEnrollMockCamera(true)
-    setEnrollProgress(0)
   }
 
   const stopEnrollCamera = () => {
@@ -293,7 +276,6 @@ function App() {
       streamRef.current = null
     }
     setIsEnrollCameraActive(false)
-    setIsEnrollMockCamera(false)
     setEnrollProgress(0)
   }
 
@@ -303,52 +285,32 @@ function App() {
     setFaceEnrollError(null)
 
     try {
-      if (isEnrollMockCamera) {
-        // Simulated enrollment process with smooth intervals
-        let progress = 0
-        const interval = setInterval(() => {
-          progress += 20
-          setEnrollProgress(progress)
-          if (progress >= 100) {
-            clearInterval(interval)
-            
-            // Create a mock 128-float descriptor (an array of random floats)
-            const mockDescriptor = Array.from({ length: 128 }, () => Math.random())
-            localStorage.setItem('ponto_employee_face_descriptor', JSON.stringify(mockDescriptor))
-            setSavedDescriptor(mockDescriptor)
-            
-            setIsEnrollingFace(false)
-            stopEnrollCamera()
-          }
-        }, 300)
-      } else {
-        const video = videoRef.current
-        if (!video) {
-          throw new Error("Elemento de vídeo não inicializado ou pronto.")
-        }
-        
-        if (!window.faceapi) {
-          throw new Error("Biblioteca de inteligência artificial (face-api.js) não está carregada.")
-        }
-        
-        const faceapi = window.faceapi
-        
-        // Detect single face with landmarks and descriptor
-        const detection = await faceapi.detectSingleFace(video)
-          .withFaceLandmarks()
-          .withFaceDescriptor()
-          
-        if (!detection) {
-          throw new Error("Rosto não detectado. Fique em frente à câmera sob boa iluminação, retire óculos escuros/máscara e tente novamente.")
-        }
-        
-        const descriptorArray = Array.from(detection.descriptor)
-        localStorage.setItem('ponto_employee_face_descriptor', JSON.stringify(descriptorArray))
-        setSavedDescriptor(descriptorArray)
-        
-        stopEnrollCamera()
-        setIsEnrollingFace(false)
+      const video = videoRef.current
+      if (!video) {
+        throw new Error("Elemento de vídeo não inicializado ou pronto.")
       }
+      
+      if (!window.faceapi) {
+        throw new Error("Biblioteca de inteligência artificial (face-api.js) não está carregada.")
+      }
+      
+      const faceapi = window.faceapi
+      
+      // Detect single face with landmarks and descriptor
+      const detection = await faceapi.detectSingleFace(video)
+        .withFaceLandmarks()
+        .withFaceDescriptor()
+        
+      if (!detection) {
+        throw new Error("Rosto não detectado. Fique em frente à câmera sob boa iluminação, retire óculos escuros/máscara e tente novamente.")
+      }
+      
+      const descriptorArray = Array.from(detection.descriptor)
+      localStorage.setItem('ponto_employee_face_descriptor', JSON.stringify(descriptorArray))
+      setSavedDescriptor(descriptorArray)
+      
+      stopEnrollCamera()
+      setIsEnrollingFace(false)
     } catch (err) {
       console.error("Erro no cadastro facial:", err)
       setFaceEnrollError(err.message || "Erro desconhecido ao processar biometria.")
@@ -559,216 +521,125 @@ function App() {
 
       let hasBackCapture = false
 
-      if (isMockCamera) {
-        // --- MOCK DUAL-CAMERA SIMULATION PIPELINE ---
-        // 1. Biometrics Front Camera Step
-        setCaptureStatusText("Iniciando Câmera Frontal (Selfie)...")
-        await new Promise(r => setTimeout(r, 600))
+      // --- REAL SEQUENTIAL DUAL-CAMERA PIPELINE ---
+      // 1. Stop existing active camera stream first
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+      }
 
-        setCaptureStatusText("Verificando Biometria Facial...")
-        await new Promise(r => setTimeout(r, 1200))
-        setBiometricMatchScore(98)
-        similarityScore = 98
+      // 2. Open Front Camera for Selfie & Biometrics
+      setCaptureStatusText("Iniciando Câmera Frontal (Selfie)...")
+      const frontStream = await getCameraStream('user')
+      streamRef.current = frontStream
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = frontStream
+        // Wait for stream metadata and make sure video is playing
+        await new Promise(resolve => {
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current.play().then(resolve).catch(resolve)
+          }
+          setTimeout(resolve, 1000) // safety fallback timeout
+        })
+      }
 
-        // Draw a simulated face on the front selfie canvas
-        const gradSelfie = selfieCtx.createLinearGradient(0, 0, 640, 480)
-        gradSelfie.addColorStop(0, '#1e1b4b') // indigo-950
-        gradSelfie.addColorStop(1, '#312e81') // indigo-900
-        selfieCtx.fillStyle = gradSelfie
-        selfieCtx.fillRect(0, 0, 640, 480)
+      setCaptureStatusText("Verificando Biometria Facial...")
+      // Allow automatic exposure and focus of front camera to settle
+      await new Promise(resolve => setTimeout(resolve, 800))
 
-        // Draw simulated facial landmarks mapping dots
-        selfieCtx.fillStyle = '#10b981' // emerald-500
-        for (let i = 0; i < 20; i++) {
-          const x = 320 + Math.sin(i) * 80
-          const y = 220 + Math.cos(i) * 90
-          selfieCtx.beginPath()
-          selfieCtx.arc(x, y, 4, 0, Math.PI * 2)
-          selfieCtx.fill()
-        }
-        selfieCtx.fillStyle = '#6366f1' // head outline
-        selfieCtx.beginPath()
-        selfieCtx.arc(320, 200, 50, 0, Math.PI * 2)
-        selfieCtx.fill()
-        selfieCtx.beginPath()
-        selfieCtx.ellipse(320, 290, 80, 50, 0, 0, Math.PI, true)
-        selfieCtx.fill()
+      if (!videoRef.current) {
+        throw new Error("Elemento de vídeo não inicializado.")
+      }
 
-        selfieCtx.fillStyle = '#ffffff'
-        selfieCtx.font = 'bold 20px system-ui, sans-serif'
-        selfieCtx.textAlign = 'center'
-        selfieCtx.fillText("SELFIE BIOMÉTRICA (MOCK)", 320, 380)
+      // Perform faceapi face detection
+      if (!window.faceapi) {
+        throw new Error("Biblioteca de Inteligência Facial (face-api.js) não disponível.")
+      }
+      const faceapi = window.faceapi
 
-        setCaptureStatusText("Biometria Aprovada!")
-        await new Promise(r => setTimeout(r, 800))
+      const activeDetection = await faceapi.detectSingleFace(videoRef.current)
+        .withFaceLandmarks()
+        .withFaceDescriptor()
 
-        // 2. Environment Back Camera Step
-        setCaptureStatusText("Alternando para Câmera Traseira...")
-        await new Promise(r => setTimeout(r, 800))
+      if (!activeDetection) {
+        setBiometricsVerificationError("Nenhum rosto detectado pela câmera! Centralize bem seu rosto na tela sob boa luz e tente novamente.")
+        setIsRegistering(false)
+        stopCamera()
+        setIsCameraActive(false)
+        return
+      }
 
-        setCaptureStatusText("Capturando foto do Ambiente...")
-        await new Promise(r => setTimeout(r, 1000))
+      // Compare vector distance
+      distanceValue = faceapi.euclideanDistance(savedDescriptor, activeDetection.descriptor)
+      setFaceMatchDistance(distanceValue)
 
-        // Draw simulated environment view
-        const gradEnv = envCtx.createLinearGradient(0, 0, 640, 480)
-        gradEnv.addColorStop(0, '#020617') // slate-950
-        gradEnv.addColorStop(1, '#0f172a') // slate-900
-        envCtx.fillStyle = gradEnv
-        envCtx.fillRect(0, 0, 640, 480)
+      if (distanceValue > 0.58) {
+        const currentSim = Math.max(0, Math.round((1 - distanceValue) * 100))
+        setBiometricsVerificationError(`Biometria Divergente! O rosto ativo na câmera não coincide com a biometria cadastrada no perfil (Similaridade: ${currentSim}%).`)
+        setIsRegistering(false)
+        stopCamera()
+        setIsCameraActive(false)
+        return
+      }
 
-        // Draw a simulated city grid / workplace vector graphics on the background
-        envCtx.strokeStyle = 'rgba(99, 102, 241, 0.15)'
-        envCtx.lineWidth = 2
-        for (let i = 0; i < 640; i += 40) {
-          envCtx.beginPath()
-          envCtx.moveTo(i, 0)
-          envCtx.lineTo(i, 480)
-          envCtx.stroke()
-        }
-        for (let i = 0; i < 480; i += 40) {
-          envCtx.beginPath()
-          envCtx.moveTo(0, i)
-          envCtx.lineTo(640, i)
-          envCtx.stroke()
-        }
+      similarityScore = Math.round((1 - distanceValue) * 100)
+      setBiometricMatchScore(similarityScore)
 
-        // Draw simulated dashboard map ring
-        envCtx.strokeStyle = 'rgba(16, 185, 129, 0.3)'
-        envCtx.lineWidth = 4
-        envCtx.beginPath()
-        envCtx.arc(320, 240, 140, 0, Math.PI * 2)
-        envCtx.stroke()
+      setCaptureStatusText(`Biometria Aprovada! (${similarityScore}% similaridade)`)
+      
+      // Take Front Selfie frame
+      selfieCtx.drawImage(videoRef.current, 0, 0, 640, 480)
+      await new Promise(resolve => setTimeout(resolve, 800))
 
-        envCtx.fillStyle = 'rgba(16, 185, 129, 0.8)'
-        envCtx.font = 'bold 22px system-ui, sans-serif'
-        envCtx.textAlign = 'center'
-        envCtx.fillText("VISTA DO AMBIENTE (MOCK)", 320, 240)
-        envCtx.font = '14px system-ui, sans-serif'
-        envCtx.fillStyle = '#94a3b8'
-        envCtx.fillText("DISPOSITIVO MOCK REGULAR", 320, 275)
+      // 3. Stop Front Camera
+      setCaptureStatusText("Alternando para Câmera Traseira (Ambiente)...")
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
 
-        hasBackCapture = true
-      } else {
-        // --- REAL SEQUENTIAL DUAL-CAMERA PIPELINE ---
-        // 1. Stop existing active camera stream first
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop())
-          streamRef.current = null
-        }
+      // Wait 500ms to let the hardware release lock (essential for mobile devices)
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-        // 2. Open Front Camera for Selfie & Biometrics
-        setCaptureStatusText("Iniciando Câmera Frontal (Selfie)...")
-        const frontStream = await getCameraStream('user')
-        streamRef.current = frontStream
-        
+      // 4. Open Back Camera for Environment
+      try {
+        const backStream = await getCameraStream('environment')
+        streamRef.current = backStream
         if (videoRef.current) {
-          videoRef.current.srcObject = frontStream
-          // Wait for stream metadata and make sure video is playing
+          videoRef.current.srcObject = backStream
           await new Promise(resolve => {
             videoRef.current.onloadedmetadata = () => {
               videoRef.current.play().then(resolve).catch(resolve)
             }
-            setTimeout(resolve, 1000) // safety fallback timeout
+            setTimeout(resolve, 1000)
           })
         }
 
-        setCaptureStatusText("Verificando Biometria Facial...")
-        // Allow automatic exposure and focus of front camera to settle
+        setCaptureStatusText("Capturando foto do ambiente...")
+        // Settle delay for focus / exposure
         await new Promise(resolve => setTimeout(resolve, 800))
 
-        if (!videoRef.current) {
-          throw new Error("Elemento de vídeo não inicializado.")
-        }
-
-        // Perform faceapi face detection
-        if (!window.faceapi) {
-          throw new Error("Biblioteca de Inteligência Facial (face-api.js) não disponível.")
-        }
-        const faceapi = window.faceapi
-
-        const activeDetection = await faceapi.detectSingleFace(videoRef.current)
-          .withFaceLandmarks()
-          .withFaceDescriptor()
-
-        if (!activeDetection) {
-          setBiometricsVerificationError("Nenhum rosto detectado pela câmera! Centralize bem seu rosto na tela sob boa luz e tente novamente.")
-          setIsRegistering(false)
-          stopCamera()
-          setIsCameraActive(false)
-          return
-        }
-
-        // Compare vector distance
-        distanceValue = faceapi.euclideanDistance(savedDescriptor, activeDetection.descriptor)
-        setFaceMatchDistance(distanceValue)
-
-        if (distanceValue > 0.58) {
-          const currentSim = Math.max(0, Math.round((1 - distanceValue) * 100))
-          setBiometricsVerificationError(`Biometria Divergente! O rosto ativo na câmera não coincide com a biometria cadastrada no perfil (Similaridade: ${currentSim}%).`)
-          setIsRegistering(false)
-          stopCamera()
-          setIsCameraActive(false)
-          return
-        }
-
-        similarityScore = Math.round((1 - distanceValue) * 100)
-        setBiometricMatchScore(similarityScore)
-
-        setCaptureStatusText(`Biometria Aprovada! (${similarityScore}% similaridade)`)
-        
-        // Take Front Selfie frame
-        selfieCtx.drawImage(videoRef.current, 0, 0, 640, 480)
-        await new Promise(resolve => setTimeout(resolve, 800))
-
-        // 3. Stop Front Camera
-        setCaptureStatusText("Alternando para Câmera Traseira (Ambiente)...")
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop())
-          streamRef.current = null
-        }
         if (videoRef.current) {
-          videoRef.current.srcObject = null
+          envCtx.drawImage(videoRef.current, 0, 0, 640, 480)
+          hasBackCapture = true
         }
-
-        // Wait 500ms to let the hardware release lock (essential for mobile devices)
-        await new Promise(resolve => setTimeout(resolve, 500))
-
-        // 4. Open Back Camera for Environment
-        try {
-          const backStream = await getCameraStream('environment')
-          streamRef.current = backStream
-          if (videoRef.current) {
-            videoRef.current.srcObject = backStream
-            await new Promise(resolve => {
-              videoRef.current.onloadedmetadata = () => {
-                videoRef.current.play().then(resolve).catch(resolve)
-              }
-              setTimeout(resolve, 1000)
-            })
-          }
-
-          setCaptureStatusText("Capturando foto do ambiente...")
-          // Settle delay for focus / exposure
-          await new Promise(resolve => setTimeout(resolve, 800))
-
-          if (videoRef.current) {
-            envCtx.drawImage(videoRef.current, 0, 0, 640, 480)
-            hasBackCapture = true
-          }
-        } catch (envErr) {
-          console.warn("Dispositivo sem câmera traseira ou erro de inicialização. Usando selfie nas duas perspectivas.", envErr)
-        }
-
-        // Stop all camera streams
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop())
-          streamRef.current = null
-        }
-        if (videoRef.current) {
-          videoRef.current.srcObject = null
-        }
-        setIsCameraActive(false)
+      } catch (envErr) {
+        console.warn("Dispositivo sem câmera traseira ou erro de inicialização. Usando selfie nas duas perspectivas.", envErr)
       }
+
+      // Stop all camera streams
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
+      setIsCameraActive(false)
 
       // --- COMPOSITION OF BOTH VIEWS ON HIGH-RES CANVAS ---
       const width = 640
@@ -789,14 +660,14 @@ function App() {
       // Draw Front Selfie picture-in-picture (PIP) frame inside top-left corner
       ctx.save()
       
-      // Neon glow shadow behind the PIP card
-      ctx.shadowColor = 'rgba(99, 102, 241, 0.6)'
+      // Neon glow shadow behind the PIP card (Volcanic Amber primary glow)
+      ctx.shadowColor = 'rgba(217, 184, 103, 0.6)'
       ctx.shadowBlur = 12
       ctx.shadowOffsetX = 2
       ctx.shadowOffsetY = 4
       
-      // Draw white/indigo border around the PIP card area
-      ctx.strokeStyle = '#6366f1'
+      // Draw white/amber border around the PIP card area (Volcanic Amber primary)
+      ctx.strokeStyle = '#d9b867'
       ctx.lineWidth = 3
       ctx.beginPath()
       ctx.roundRect(20, 20, 140, 105, 8)
@@ -827,8 +698,8 @@ function App() {
         
         ctx.save()
         
-        // Draw light premium glowing circle background for the logo watermark
-        ctx.shadowColor = 'rgba(99, 102, 241, 0.4)'
+        // Draw light premium glowing circle background for the logo watermark (Volcanic Amber primary glow)
+        ctx.shadowColor = 'rgba(217, 184, 103, 0.4)'
         ctx.shadowBlur = 10
         ctx.fillStyle = 'rgba(9, 13, 22, 0.65)'
         ctx.beginPath()
@@ -855,11 +726,11 @@ function App() {
       ctx.fillStyle = gradient
       ctx.fillRect(0, height - bannerHeight, width, bannerHeight)
 
-      // Gradient accent divider line
+      // Gradient accent divider line (Amber -> Bronze -> Emerald)
       const accentGradient = ctx.createLinearGradient(0, 0, width, 0)
-      accentGradient.addColorStop(0, '#6366f1')
-      accentGradient.addColorStop(0.5, '#a855f7')
-      accentGradient.addColorStop(1, '#10b981')
+      accentGradient.addColorStop(0, '#d9b867')
+      accentGradient.addColorStop(0.5, '#b7894d')
+      accentGradient.addColorStop(1, '#34d399')
       ctx.fillStyle = accentGradient
       ctx.fillRect(0, height - bannerHeight, width, 3)
 
@@ -910,17 +781,17 @@ function App() {
       const badgeX = width - badgeWidth - 20
       const badgeY = height - 68
 
-      // Badge Background
-      ctx.fillStyle = 'rgba(99, 102, 241, 0.2)'
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.6)'
+      // Badge Background (Volcanic Amber primary)
+      ctx.fillStyle = 'rgba(217, 184, 103, 0.2)'
+      ctx.strokeStyle = 'rgba(217, 184, 103, 0.6)'
       ctx.lineWidth = 1
       ctx.beginPath()
       ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4)
       ctx.fill()
       ctx.stroke()
-
-      // Badge Text
-      ctx.fillStyle = '#a5b4fc' // Indigo 300
+      
+      // Badge Text (Light Warm Gold/Amber)
+      ctx.fillStyle = '#fce2a6' // Amber 300
       ctx.textAlign = 'center'
       ctx.fillText(userBadgeText, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2)
 
@@ -966,7 +837,7 @@ function App() {
         address: location.address || '',
         photo: dataUrl,
         biometricScore: similarityScore,
-        isMocked: isMockCamera
+        isMocked: false
       }
 
       setAttendanceHistory(prev => [newRecord, ...prev])
@@ -1158,55 +1029,27 @@ function App() {
                   
                   {/* Camera view for enrollment */}
                   <div className="camera-window" style={{ aspectRatio: '4/3', marginBottom: '8px', height: '220px', border: '2px solid var(--secondary)' }}>
-                    {isEnrollMockCamera ? (
-                      /* SIMULATOR ENROLLMENT CAM VIEW */
-                      <div style={{ width: '100%', height: '100%', background: '#020617', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', position: 'relative' }}>
-                        <div className="camera-badge" style={{ borderColor: 'rgba(168, 85, 247, 0.4)', top: '10px', left: '10px' }}>
-                          <span className="pulse-indicator" style={{ background: 'var(--secondary)', boxShadow: '0 0 8px var(--secondary)' }}></span>
-                          <span style={{ color: '#a855f7' }}>CÂMERA DE CADASTRO</span>
-                        </div>
-                        <div className="scanner-laser"></div>
-                        <div className="camera-corners" style={{ borderColor: '#a855f7' }}>
-                          <span></span>
-                        </div>
-                        <User size={36} style={{ color: 'var(--primary)', opacity: 0.6 }} />
-                        <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>SIMULADOR PRONTO PARA CADASTRO</span>
-                        
-                        {isEnrollingFace && (
-                          <div style={{ position: 'absolute', bottom: '20px', left: '16px', right: '16px', background: 'rgba(9, 13, 22, 0.85)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
-                            <span style={{ color: '#fff', fontSize: '11px', display: 'block', marginBottom: '6px' }}>Sincronizando biometria... {enrollProgress}%</span>
-                            <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                              <div style={{ width: `${enrollProgress}%`, height: '100%', background: 'linear-gradient(to right, var(--primary), var(--secondary))', transition: 'width 0.2s' }}></div>
-                            </div>
-                          </div>
-                        )}
+                    <div className="camera-badge" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', top: '10px', left: '10px' }}>
+                      <span className="pulse-indicator"></span>
+                      <span>CÂMERA DE CADASTRO</span>
+                    </div>
+                    <div className="scanner-laser" style={{ background: 'linear-gradient(to right, transparent, var(--primary), transparent)', boxShadow: '0 0 8px var(--primary)' }}></div>
+                    <div className="camera-corners">
+                      <span></span>
+                    </div>
+                    <video 
+                      ref={videoRef} 
+                      className="camera-stream" 
+                      autoPlay 
+                      playsInline
+                      muted
+                      style={{ transform: 'scaleX(-1)' }} // Mirror view for selfie natural feeling
+                    ></video>
+                    {isEnrollingFace && (
+                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(9, 13, 22, 0.75)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                        <RefreshCw size={24} className="animate-spin" style={{ color: 'var(--primary)' }} />
+                        <span style={{ color: '#fff', fontSize: '12px', fontWeight: '500' }}>Mapeando 68 pontos faciais...</span>
                       </div>
-                    ) : (
-                      /* REAL ENROLLMENT CAM VIEW */
-                      <>
-                        <div className="camera-badge" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', top: '10px', left: '10px' }}>
-                          <span className="pulse-indicator"></span>
-                          <span>CÂMERA DE CADASTRO</span>
-                        </div>
-                        <div className="scanner-laser" style={{ background: 'linear-gradient(to right, transparent, var(--primary), transparent)', boxShadow: '0 0 8px var(--primary)' }}></div>
-                        <div className="camera-corners">
-                          <span></span>
-                        </div>
-                        <video 
-                          ref={videoRef} 
-                          className="camera-stream" 
-                          autoPlay 
-                          playsInline
-                          muted
-                          style={{ transform: 'scaleX(-1)' }} // Mirror view for selfie natural feeling
-                        ></video>
-                        {isEnrollingFace && (
-                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(9, 13, 22, 0.75)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                            <RefreshCw size={24} className="animate-spin" style={{ color: 'var(--primary)' }} />
-                            <span style={{ color: '#fff', fontSize: '12px', fontWeight: '500' }}>Mapeando 68 pontos faciais...</span>
-                          </div>
-                        )}
-                      </>
                     )}
                   </div>
 
@@ -1265,14 +1108,6 @@ function App() {
                       style={{ fontSize: '14px', padding: '10px' }}
                     >
                       Mapear Câmera Real
-                    </button>
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary" 
-                      onClick={startEnrollMockCamera}
-                      style={{ fontSize: '14px', padding: '10px', background: 'rgba(168, 85, 247, 0.1)', borderColor: 'rgba(168, 85, 247, 0.2)' }}
-                    >
-                      Mapear Câmera Simulada
                     </button>
                   </div>
                 </div>
@@ -1357,11 +1192,7 @@ function App() {
                     setBiometricsVerificationError(null)
                     setFaceMatchDistance(null)
                     // Restart camera
-                    if (isMockCamera) {
-                      startMockCamera()
-                    } else {
-                      startCamera()
-                    }
+                    startCamera()
                   }}
                   style={{ flex: 2, padding: '12px 10px', fontSize: '14px', background: 'linear-gradient(135deg, var(--error), var(--warning))', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)' }}
                 >
@@ -1391,13 +1222,6 @@ function App() {
                     onClick={() => startCamera()}
                   >
                     Ativar Câmera Real
-                  </button>
-                  <button 
-                    className="btn btn-secondary" 
-                    style={{ background: 'rgba(168, 85, 247, 0.1)', borderColor: 'rgba(168, 85, 247, 0.3)' }}
-                    onClick={() => startMockCamera()}
-                  >
-                    Usar Câmera Simulada
                   </button>
                 </div>
               </div>
@@ -1461,51 +1285,24 @@ function App() {
                     </div>
                   </div>
                 )}
-                {isMockCamera ? (
-                  /* MOCK CAMERA UI VIEW */
-                  <div style={{ width: '100%', height: '100%', background: '#020617', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', position: 'relative' }}>
-                    <div className="camera-badge" style={{ borderColor: 'rgba(168, 85, 247, 0.4)' }}>
-                      <span className="pulse-indicator" style={{ background: 'var(--secondary)', boxShadow: '0 0 8px var(--secondary)' }}></span>
-                      <span style={{ color: '#a855f7' }}>CÂMERA SIMULADA</span>
-                    </div>
-                    
-                    <div className="scanner-laser"></div>
-                    
-                    <div className="camera-corners" style={{ borderColor: '#a855f7' }}>
-                      <span></span>
-                    </div>
+                <div className="camera-badge">
+                  <span className="pulse-indicator"></span>
+                  <span>CÂMERA ATIVA</span>
+                </div>
+                
+                <div className="scanner-laser"></div>
+                
+                <div className="camera-corners">
+                  <span></span>
+                </div>
 
-                    <div style={{ width: '75px', height: '75px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))', border: '2px dashed #6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'pulse 2s infinite' }}>
-                      <User size={32} style={{ color: 'var(--primary)' }} />
-                    </div>
-                    <div style={{ textAlign: 'center', px: '20px' }}>
-                      <span style={{ color: '#10b981', fontSize: '13px', fontWeight: '700', letterSpacing: '1px', display: 'block', marginBottom: '2px' }}>RECONHECIMENTO ATIVO</span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Carimbo Geográfico e Logo prontos</span>
-                    </div>
-                  </div>
-                ) : (
-                  /* REAL CAMERA VIDEO VIEW */
-                  <>
-                    <div className="camera-badge">
-                      <span className="pulse-indicator"></span>
-                      <span>CÂMERA ATIVA</span>
-                    </div>
-                    
-                    <div className="scanner-laser"></div>
-                    
-                    <div className="camera-corners">
-                      <span></span>
-                    </div>
-
-                    <video 
-                      ref={videoRef} 
-                      className="camera-stream" 
-                      autoPlay 
-                      playsInline
-                      muted
-                    ></video>
-                  </>
-                )}
+                <video 
+                  ref={videoRef} 
+                  className="camera-stream" 
+                  autoPlay 
+                  playsInline
+                  muted
+                ></video>
               </div>
             )}
 
