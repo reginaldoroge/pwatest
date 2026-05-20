@@ -553,10 +553,19 @@ function App() {
     <>
       <Header employeeName={employeeName} employeeRole={employeeRole} onLogoff={handleLogoff} isOnline={isOnline} />
       {isConfiguring && (
-        <LoginForm
-          onLogin={handleLogin}
-          playBuzzerSound={playBuzzerSound}
-        />
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          width: '100%',
+          margin: 'auto 0'
+        }}>
+          <LoginForm
+            onLogin={handleLogin}
+            playBuzzerSound={playBuzzerSound}
+          />
+        </div>
       )}
       {!isConfiguring && !stampedPhoto && <Clock />}
       {!isConfiguring && !stampedPhoto && (
