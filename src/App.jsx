@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import Header from './components/Header'
 import Clock from './components/Clock'
 import MainMenu from './components/MainMenu'
+import InstallBanner from './components/InstallBanner'
 import LoginForm from './components/LoginForm'
 import CameraView from './components/CameraView'
 import ReceiptView from './components/ReceiptView'
@@ -801,6 +802,9 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* PWA INSTALL & PERMISSIONS BANNER */}
+      <InstallBanner />
     </>
   )
 }
