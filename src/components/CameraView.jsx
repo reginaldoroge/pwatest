@@ -2,8 +2,7 @@ import {
   Camera, 
   MapPin, 
   RefreshCw, 
-  Scan, 
-  XCircle 
+  Scan
 } from 'lucide-react'
 
 export default function CameraView({

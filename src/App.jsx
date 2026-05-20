@@ -9,6 +9,7 @@ import ReceiptView from './components/ReceiptView'
 import HistoryList from './components/HistoryList'
 import { ArrowLeft, Fingerprint, CalendarDays } from 'lucide-react'
 import { playBuzzerSound } from './utils/audio'
+import { requestCameraStream, stopCameraStream } from './utils/camera'
 import { getCoordinates } from './utils/geolocation'
 import { sendRecordToServer, syncPendingRecords, recordSyncFailure } from './utils/sync'
 import localforage from 'localforage'
@@ -134,34 +135,19 @@ function App() {
     setIsCameraActive(true)
     stopCamera()
     try {
-      const constraints = { video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false }
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      const stream = await requestCameraStream(facingMode)
       streamRef.current = stream
       if (videoRef.current) videoRef.current.srcObject = stream
     } catch (err) {
-      console.warn("Primeira tentativa de câmera falhou, tentando fallback...", err)
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false })
-        streamRef.current = stream
-        if (videoRef.current) videoRef.current.srcObject = stream
-      } catch (errFallback) {
-        console.warn("Fallback 1 falhou, tentando simples...", errFallback)
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-          streamRef.current = stream
-          if (videoRef.current) videoRef.current.srcObject = stream
-        } catch (errSimple) {
-          console.error("Todas as tentativas falharam:", errSimple)
-          setCameraError("Câmera real indisponível. Por favor, conceda permissões de câmera.")
-          setIsCameraActive(false)
-        }
-      }
+      console.error("Todas as tentativas falharam:", err)
+      setCameraError("Câmera real indisponível. Por favor, conceda permissões de câmera.")
+      setIsCameraActive(false)
     }
   }
 
   const stopCamera = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
+      stopCameraStream(streamRef.current)
       streamRef.current = null
     }
   }
@@ -250,18 +236,6 @@ function App() {
       const canvas = canvasRef.current
       if (!canvas) throw new Error("Elemento canvas indisponível.")
       
-      const getCameraStream = async (mode) => {
-        try {
-          return await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false })
-        } catch (err) {
-          try {
-            return await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode }, audio: false })
-          } catch (e) {
-            return await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-          }
-        }
-      }
-
       const selfieCanvas = document.createElement('canvas')
       selfieCanvas.width = 640
       selfieCanvas.height = 480
@@ -276,7 +250,7 @@ function App() {
       // Capture Selfie (Front Camera)
       stopCamera()
       setCaptureStatusText("Capturando Câmera Frontal (Selfie)...")
-      const frontStream = await getCameraStream('user')
+      const frontStream = await requestCameraStream('user')
       streamRef.current = frontStream
       if (videoRef.current) {
         videoRef.current.srcObject = frontStream
@@ -296,7 +270,7 @@ function App() {
       await new Promise(resolve => setTimeout(resolve, 300))
 
       try {
-        const backStream = await getCameraStream('environment')
+        const backStream = await requestCameraStream('environment')
         streamRef.current = backStream
         if (videoRef.current) {
           videoRef.current.srcObject = backStream

@@ -197,6 +197,14 @@
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
+  width: 100%;
+  color: inherit;
+  font-family: var(--font-sans);
+  text-align: left;
+}
+
+.install-banner-perm-item:disabled {
+  cursor: default;
 }
 
 .install-banner-perm-icon {
@@ -270,6 +278,16 @@
 
 .install-banner-settings-hint strong {
   color: var(--text-main);
+}
+
+.install-banner-ios-hint {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: oklch(0.72 0.13 85 / 10%);
+  border: 1px solid oklch(0.72 0.13 85 / 18%);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .install-banner-perm-info {

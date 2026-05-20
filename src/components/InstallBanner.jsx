@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Download, Camera, MapPin, Bell, CheckCircle2, Shield, X, ChevronRight, Settings } from 'lucide-react'
 import { requestCameraStream, stopCameraStream } from '../utils/camera'
+import {
+  clearConfirmedPermission,
+  confirmPermission,
+  getBrowserPermissionState,
+  getConfirmedPermissions,
+  getEffectivePermissionState,
+  isIosDevice,
+  requestLocationPermission
+} from '../utils/permissions'
 import './InstallBanner.css'
+
+const REQUIRED_PERMISSIONS = ['camera', 'location']
+const IS_IOS = isIosDevice()
 
 export default function InstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
@@ -15,6 +27,8 @@ export default function InstallBanner() {
   const [isRequesting, setIsRequesting] = useState(false)
   const [allGranted, setAllGranted] = useState(false)
   const [showSettingsHint, setShowSettingsHint] = useState(false)
+  const [confirmedPermissions, setConfirmedPermissions] = useState(() => getConfirmedPermissions())
+  const [permissionError, setPermissionError] = useState('')
 
   // Check if app is already installed and if permissions were previously completed
   useEffect(() => {
@@ -56,15 +70,11 @@ export default function InstallBanner() {
     const checkPermissions = async () => {
       const perms = { camera: 'unknown', location: 'unknown', notifications: 'unknown' }
 
-      try {
-        const cam = await navigator.permissions.query({ name: 'camera' })
-        perms.camera = cam.state
-      } catch { perms.camera = 'prompt' }
+      const camState = await getBrowserPermissionState('camera')
+      perms.camera = getEffectivePermissionState('camera', camState, confirmedPermissions)
 
-      try {
-        const geo = await navigator.permissions.query({ name: 'geolocation' })
-        perms.location = geo.state
-      } catch { perms.location = 'prompt' }
+      const geoState = await getBrowserPermissionState('geolocation')
+      perms.location = getEffectivePermissionState('location', geoState, confirmedPermissions)
 
       try {
         if ('Notification' in window) {
@@ -76,14 +86,14 @@ export default function InstallBanner() {
 
       setPermissions(perms)
 
-      const allDone = perms.camera === 'granted' && perms.location === 'granted'
+      const allDone = REQUIRED_PERMISSIONS.every(key => perms[key] === 'granted')
       setAllGranted(allDone)
     }
 
     checkPermissions()
     const interval = setInterval(checkPermissions, 3000)
     return () => clearInterval(interval)
-  }, [])
+  }, [confirmedPermissions])
 
   // Determine if banner should show
   useEffect(() => {
@@ -125,14 +135,13 @@ export default function InstallBanner() {
 
   const recheckPermissions = async () => {
     const perms = { camera: 'unknown', location: 'unknown', notifications: 'unknown' }
-    try {
-      const cam = await navigator.permissions.query({ name: 'camera' })
-      perms.camera = cam.state
-    } catch { perms.camera = 'prompt' }
-    try {
-      const geo = await navigator.permissions.query({ name: 'geolocation' })
-      perms.location = geo.state
-    } catch { perms.location = 'prompt' }
+    const latestConfirmed = getConfirmedPermissions()
+    const camState = await getBrowserPermissionState('camera')
+    perms.camera = getEffectivePermissionState('camera', camState, latestConfirmed)
+
+    const geoState = await getBrowserPermissionState('geolocation')
+    perms.location = getEffectivePermissionState('location', geoState, latestConfirmed)
+
     try {
       if ('Notification' in window) {
         perms.notifications = Notification.permission === 'default' ? 'prompt' : Notification.permission
@@ -141,15 +150,26 @@ export default function InstallBanner() {
       }
     } catch { perms.notifications = 'unavailable' }
     setPermissions(perms)
+    setConfirmedPermissions(latestConfirmed)
   }
 
   const requestSingle = async (key) => {
+    setPermissionError('')
+
+    if (!window.isSecureContext) {
+      setPermissionError('No iPhone, câmera e localização só podem ser liberadas em HTTPS.')
+      return false
+    }
+
     if (key === 'camera' && permissions.camera !== 'granted') {
       try {
         const stream = await requestCameraStream('user')
         stopCameraStream(stream)
+        setConfirmedPermissions(confirmPermission('camera'))
         return true
       } catch (err) {
+        setConfirmedPermissions(clearConfirmedPermission('camera'))
+        setPermissionError('Não foi possível liberar a câmera. Se já foi bloqueada, libere nas configurações do Safari/site.')
         console.warn('Camera permission denied:', err)
         return false
       }
@@ -157,11 +177,12 @@ export default function InstallBanner() {
 
     if (key === 'location' && permissions.location !== 'granted') {
       try {
-        await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
-        })
+        await requestLocationPermission()
+        setConfirmedPermissions(confirmPermission('location'))
         return true
       } catch (err) {
+        setConfirmedPermissions(clearConfirmedPermission('location'))
+        setPermissionError('Não foi possível liberar a localização. Confira se Localização está ativa para Safari/Sites no iPhone.')
         console.warn('Geolocation permission denied:', err)
         return false
       }
@@ -170,6 +191,7 @@ export default function InstallBanner() {
     if (key === 'notifications' && permissions.notifications !== 'granted') {
       try {
         const result = await Notification.requestPermission()
+        if (result === 'granted') setConfirmedPermissions(confirmPermission('notifications'))
         return result === 'granted'
       } catch (err) {
         console.warn('Notification permission denied:', err)
@@ -190,6 +212,12 @@ export default function InstallBanner() {
 
   const handleRequestPermissions = async () => {
     if (isRequesting) return
+
+    if (IS_IOS) {
+      setPermissionError('No iPhone, libere câmera e localização uma por vez tocando em cada permissão.')
+      return
+    }
+
     setIsRequesting('all')
 
     if (permissions.camera !== 'granted') await requestSingle('camera')
@@ -230,6 +258,7 @@ export default function InstallBanner() {
 
   // Only allow dismiss when all required permissions are granted
   const canDismiss = allGranted
+  const showGrantAll = !IS_IOS && !allGranted && !showSettingsHint
 
   return (
     <div className="install-banner-overlay">
@@ -284,10 +313,13 @@ export default function InstallBanner() {
               const isClickable = canRequest && !isRequesting
               const isLoading = isRequesting === item.key || isRequesting === 'all'
               return (
-                <div
+                <button
+                  type="button"
                   key={item.key}
                   className={`install-banner-perm-item ${isClickable ? 'perm-clickable' : ''}`}
                   onClick={isClickable ? () => handleRequestPermission(item.key) : undefined}
+                  disabled={!isClickable}
+                  aria-label={`Liberar ${item.label}`}
                 >
                   <div className={`install-banner-perm-icon ${item.status === 'granted' ? 'perm-granted' : item.status === 'denied' ? 'perm-denied' : 'perm-pending'}`}>
                     {item.icon}
@@ -309,7 +341,7 @@ export default function InstallBanner() {
                       <span className="perm-pending-badge">Toque para liberar</span>
                     )}
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -325,7 +357,20 @@ export default function InstallBanner() {
             </div>
           )}
 
-          {!allGranted && !showSettingsHint && (
+          {permissionError && (
+            <div className="install-banner-settings-hint">
+              <Settings size={14} />
+              <span>{permissionError}</span>
+            </div>
+          )}
+
+          {IS_IOS && !allGranted && !permissionError && (
+            <div className="install-banner-ios-hint">
+              No iPhone, libere câmera e localização separadamente.
+            </div>
+          )}
+
+          {showGrantAll && (
             <button
               className="install-banner-grant-btn"
               onClick={handleRequestPermissions}
