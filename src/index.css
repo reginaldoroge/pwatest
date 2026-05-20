@@ -1273,6 +1273,16 @@ p {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.perm-clickable-badge {
+  cursor: pointer;
+}
+
+.install-banner-perm-item.perm-clickable .perm-denied-badge {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
 .install-banner-settings-hint {
   display: flex;
   align-items: flex-start;

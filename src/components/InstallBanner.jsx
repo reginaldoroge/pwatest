@@ -141,72 +141,58 @@ export default function InstallBanner() {
     setPermissions(perms)
   }
 
-  const handleRequestPermission = async (key) => {
-    setIsRequesting(key)
-
-    if (key === 'camera' && permissions.camera !== 'granted' && permissions.camera !== 'denied') {
+  const requestSingle = async (key) => {
+    if (key === 'camera' && permissions.camera !== 'granted') {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
         stream.getTracks().forEach(t => t.stop())
+        return true
       } catch (err) {
         console.warn('Camera permission denied:', err)
+        return false
       }
     }
 
-    if (key === 'location' && permissions.location !== 'granted' && permissions.location !== 'denied') {
+    if (key === 'location' && permissions.location !== 'granted') {
       try {
         await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
         })
+        return true
       } catch (err) {
         console.warn('Geolocation permission denied:', err)
+        return false
       }
     }
 
-    if (key === 'notifications' && (permissions.notifications === 'prompt' || permissions.notifications === 'default')) {
+    if (key === 'notifications' && permissions.notifications !== 'granted') {
       try {
-        await Notification.requestPermission()
+        const result = await Notification.requestPermission()
+        return result === 'granted'
       } catch (err) {
         console.warn('Notification permission denied:', err)
+        return false
       }
     }
 
+    return true
+  }
+
+  const handleRequestPermission = async (key) => {
+    if (isRequesting) return
+    setIsRequesting(key)
+    await requestSingle(key)
     setIsRequesting(false)
     setTimeout(recheckPermissions, 500)
   }
 
   const handleRequestPermissions = async () => {
+    if (isRequesting) return
     setIsRequesting('all')
 
-    // Request Camera (only if not denied/blocked)
-    if (permissions.camera !== 'granted' && permissions.camera !== 'denied') {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        stream.getTracks().forEach(t => t.stop())
-      } catch (err) {
-        console.warn('Camera permission denied:', err)
-      }
-    }
-
-    // Request Geolocation (only if not denied/blocked)
-    if (permissions.location !== 'granted' && permissions.location !== 'denied') {
-      try {
-        await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
-        })
-      } catch (err) {
-        console.warn('Geolocation permission denied:', err)
-      }
-    }
-
-    // Request Notifications (only if prompt)
-    if (permissions.notifications === 'prompt' || permissions.notifications === 'default') {
-      try {
-        await Notification.requestPermission()
-      } catch (err) {
-        console.warn('Notification permission denied:', err)
-      }
-    }
+    if (permissions.camera !== 'granted') await requestSingle('camera')
+    if (permissions.location !== 'granted') await requestSingle('location')
+    if (permissions.notifications !== 'granted') await requestSingle('notifications')
 
     setIsRequesting(false)
     setTimeout(recheckPermissions, 500)
@@ -292,8 +278,9 @@ export default function InstallBanner() {
 
           <div className="install-banner-perm-list">
             {permissionItems.map((item) => {
-              const canRequest = item.status !== 'granted' && item.status !== 'denied' && item.status !== 'unavailable'
+              const canRequest = item.status !== 'granted' && item.status !== 'unavailable'
               const isClickable = canRequest && !isRequesting
+              const isLoading = isRequesting === item.key || isRequesting === 'all'
               return (
                 <div
                   key={item.key}
@@ -310,12 +297,12 @@ export default function InstallBanner() {
                   <div className="install-banner-perm-status">
                     {item.status === 'granted' ? (
                       <CheckCircle2 size={18} style={{ color: 'var(--success)' }} />
+                    ) : isLoading ? (
+                      <span className="animate-spin" style={{ display: 'inline-flex', fontSize: '12px' }}>⏳</span>
                     ) : item.status === 'denied' ? (
-                      <span className="perm-denied-badge">Bloqueado</span>
+                      <span className="perm-denied-badge perm-clickable-badge">Toque para tentar</span>
                     ) : item.status === 'unavailable' ? (
                       <span className="perm-na-badge">N/A</span>
-                    ) : isRequesting === item.key ? (
-                      <span className="animate-spin" style={{ display: 'inline-flex', fontSize: '12px' }}>⏳</span>
                     ) : (
                       <span className="perm-pending-badge">Toque para liberar</span>
                     )}
