@@ -7,7 +7,14 @@ import ReceiptView from './components/ReceiptView'
 import HistoryList from './components/HistoryList'
 import { playBuzzerSound } from './utils/audio'
 import { getCoordinates } from './utils/geolocation'
+import localforage from 'localforage'
 import './App.css'
+
+// Configure localForage database
+localforage.config({
+  name: 'PontoSeguroDB',
+  storeName: 'attendance_history'
+})
 
 function App() {
   // --- STATE ---
@@ -23,10 +30,8 @@ function App() {
   const [stampedPhoto, setStampedPhoto] = useState(null)
   const [isRegistering, setIsRegistering] = useState(false)
   const [successRecord, setSuccessRecord] = useState(null)
-  const [attendanceHistory, setAttendanceHistory] = useState(() => {
-    const saved = localStorage.getItem('ponto_attendance_history')
-    return saved ? JSON.parse(saved) : []
-  })
+  const [attendanceHistory, setAttendanceHistory] = useState([])
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false)
 
   // AI Face recognition states
   const [isModelsLoaded, setIsModelsLoaded] = useState(false)
@@ -50,10 +55,39 @@ function App() {
   const streamRef = useRef(null)
   const canvasRef = useRef(null)
 
+  // --- LOAD AND MIGRATE HISTORY EFFECT ---
+  useEffect(() => {
+    const initHistory = async () => {
+      try {
+        const saved = await localforage.getItem('ponto_attendance_history')
+        if (saved) {
+          setAttendanceHistory(saved)
+        } else {
+          // Fallback legacy migration: check if old localStorage has data
+          const legacySaved = localStorage.getItem('ponto_attendance_history')
+          if (legacySaved) {
+            const parsed = JSON.parse(legacySaved)
+            setAttendanceHistory(parsed)
+            await localforage.setItem('ponto_attendance_history', parsed)
+            localStorage.removeItem('ponto_attendance_history')
+            console.log("Histórico legado do localStorage migrado com sucesso para o IndexedDB via localForage!")
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao inicializar histórico com localForage:", err)
+      } finally {
+        setIsHistoryLoaded(true)
+      }
+    }
+    initHistory()
+  }, [])
+
   // --- SAVE HISTORY EFFECT ---
   useEffect(() => {
-    localStorage.setItem('ponto_attendance_history', JSON.stringify(attendanceHistory))
-  }, [attendanceHistory])
+    if (!isHistoryLoaded) return
+    localforage.setItem('ponto_attendance_history', attendanceHistory)
+      .catch(err => console.error("Erro ao salvar histórico no localforage:", err))
+  }, [attendanceHistory, isHistoryLoaded])
 
   // --- AI MODEL LOADING EFFECT ---
   useEffect(() => {
