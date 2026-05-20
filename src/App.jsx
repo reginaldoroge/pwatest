@@ -7,6 +7,7 @@ import ReceiptView from './components/ReceiptView'
 import HistoryList from './components/HistoryList'
 import { playBuzzerSound } from './utils/audio'
 import { getCoordinates } from './utils/geolocation'
+import { sendRecordToServer, syncPendingRecords } from './utils/sync'
 import localforage from 'localforage'
 import './App.css'
 
@@ -32,6 +33,7 @@ function App() {
   const [successRecord, setSuccessRecord] = useState(null)
   const [attendanceHistory, setAttendanceHistory] = useState([])
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false)
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
 
   // AI Face recognition states
   const [isModelsLoaded, setIsModelsLoaded] = useState(false)
@@ -61,14 +63,16 @@ function App() {
       try {
         const saved = await localforage.getItem('ponto_attendance_history')
         if (saved) {
-          setAttendanceHistory(saved)
+          const mapped = saved.map(item => ({ ...item, syncStatus: item.syncStatus || 'synced' }))
+          setAttendanceHistory(mapped)
         } else {
           // Fallback legacy migration: check if old localStorage has data
           const legacySaved = localStorage.getItem('ponto_attendance_history')
           if (legacySaved) {
             const parsed = JSON.parse(legacySaved)
-            setAttendanceHistory(parsed)
-            await localforage.setItem('ponto_attendance_history', parsed)
+            const migrated = parsed.map(item => ({ ...item, syncStatus: item.syncStatus || 'synced' }))
+            setAttendanceHistory(migrated)
+            await localforage.setItem('ponto_attendance_history', migrated)
             localStorage.removeItem('ponto_attendance_history')
             console.log("Histórico legado do localStorage migrado com sucesso para o IndexedDB via localForage!")
           }
@@ -81,6 +85,25 @@ function App() {
     }
     initHistory()
   }, [])
+
+  // --- MONITOR CONNECTIVITY EFFECT ---
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  // --- AUTO SYNC ON CONNECT EFFECT ---
+  useEffect(() => {
+    if (isHistoryLoaded && isOnline) {
+      syncPendingRecords(attendanceHistory, setAttendanceHistory)
+    }
+  }, [isHistoryLoaded, isOnline])
 
   // --- SAVE HISTORY EFFECT ---
   useEffect(() => {
@@ -479,7 +502,7 @@ function App() {
       const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
       setStampedPhoto(dataUrl)
 
-      const newRecord = {
+      const baseRecord = {
         id: 'ponto_' + Date.now(),
         employeeName,
         employeeRole,
@@ -491,6 +514,21 @@ function App() {
         address: location.address || '',
         photo: dataUrl
       }
+
+      let syncStatus = 'pending'
+      if (isOnline) {
+        setCaptureStatusText("Sincronizando registro...")
+        const isSent = await sendRecordToServer(baseRecord)
+        if (isSent) {
+          syncStatus = 'synced'
+        }
+      }
+
+      const newRecord = {
+        ...baseRecord,
+        syncStatus
+      }
+
       setAttendanceHistory(prev => [newRecord, ...prev])
       setSuccessRecord(newRecord)
       playBuzzerSound(true)
@@ -557,7 +595,7 @@ function App() {
 
   return (
     <>
-      <Header employeeName={employeeName} employeeRole={employeeRole} onEditProfile={() => setIsConfiguring(true)} />
+      <Header employeeName={employeeName} employeeRole={employeeRole} onEditProfile={() => setIsConfiguring(true)} isOnline={isOnline} />
       {isConfiguring && (
         <ProfileForm
           employeeName={employeeName} setEmployeeName={setEmployeeName}

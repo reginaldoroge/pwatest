@@ -51,7 +51,34 @@ export default function HistoryList({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                <span className="badge badge-success">OK</span>
+                {item.syncStatus === 'pending' ? (
+                  <span className="badge" style={{
+                    background: 'rgba(245, 158, 11, 0.12)',
+                    color: '#f59e0b',
+                    border: '1px solid rgba(245, 158, 11, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    padding: '2px 6px',
+                    borderRadius: '4px'
+                  }}>
+                    ⏳ Pendente
+                  </span>
+                ) : (
+                  <span className="badge badge-success" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    padding: '2px 6px',
+                    borderRadius: '4px'
+                  }}>
+                    ☁️ Sincronizado
+                  </span>
+                )}
                 <button 
                   className="btn btn-secondary"
                   onClick={(e) => handleDeleteRecord(item.id, e)}
