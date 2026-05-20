@@ -7,7 +7,7 @@ import ReceiptView from './components/ReceiptView'
 import HistoryList from './components/HistoryList'
 import { playBuzzerSound } from './utils/audio'
 import { getCoordinates } from './utils/geolocation'
-import { sendRecordToServer, syncPendingRecords } from './utils/sync'
+import { sendRecordToServer, syncPendingRecords, recordSyncFailure } from './utils/sync'
 import localforage from 'localforage'
 import './App.css'
 
@@ -101,7 +101,7 @@ function App() {
   // --- AUTO SYNC ON CONNECT EFFECT ---
   useEffect(() => {
     if (isHistoryLoaded && isOnline) {
-      syncPendingRecords(attendanceHistory, setAttendanceHistory)
+      syncPendingRecords(setAttendanceHistory)
     }
   }, [isHistoryLoaded, isOnline])
 
@@ -521,6 +521,8 @@ function App() {
         const isSent = await sendRecordToServer(baseRecord)
         if (isSent) {
           syncStatus = 'synced'
+        } else {
+          recordSyncFailure(baseRecord.id)
         }
       }
 
@@ -593,6 +595,35 @@ function App() {
     }
   }
 
+  const handleSyncRecord = async (record) => {
+    if (isRegistering) return
+    setIsRegistering(true)
+    setCaptureStatusText("Sincronizando registro...")
+    try {
+      const isSent = await sendRecordToServer(record)
+      if (isSent) {
+        setAttendanceHistory(prev => {
+          const updated = prev.map(item => 
+            item.id === record.id ? { ...item, syncStatus: 'synced' } : item
+          )
+          localforage.setItem('ponto_attendance_history', updated)
+          return updated
+        })
+        playBuzzerSound(true)
+      } else {
+        playBuzzerSound(false)
+        alert("Não foi possível enviar o registro no momento. Verifique sua conexão de rede.")
+      }
+    } catch (err) {
+      console.error("[Sync] Erro manual:", err)
+      playBuzzerSound(false)
+      alert("Erro crítico de sincronização.")
+    } finally {
+      setIsRegistering(false)
+      setCaptureStatusText("")
+    }
+  }
+
   return (
     <>
       <Header employeeName={employeeName} employeeRole={employeeRole} onEditProfile={() => setIsConfiguring(true)} isOnline={isOnline} />
@@ -635,6 +666,7 @@ function App() {
         isConfiguring={isConfiguring} attendanceHistory={attendanceHistory}
         setStampedPhoto={setStampedPhoto} setSuccessRecord={setSuccessRecord}
         handleDeleteRecord={handleDeleteRecord}
+        handleSyncRecord={handleSyncRecord}
       />
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
       <footer className="footer-info">

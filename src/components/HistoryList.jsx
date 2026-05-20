@@ -5,7 +5,8 @@ export default function HistoryList({
   attendanceHistory,
   setStampedPhoto,
   setSuccessRecord,
-  handleDeleteRecord
+  handleDeleteRecord,
+  handleSyncRecord
 }) {
   if (isConfiguring) return null
 
@@ -52,20 +53,31 @@ export default function HistoryList({
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                 {item.syncStatus === 'pending' ? (
-                  <span className="badge" style={{
-                    background: 'rgba(245, 158, 11, 0.12)',
-                    color: '#f59e0b',
-                    border: '1px solid rgba(245, 158, 11, 0.25)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    padding: '2px 6px',
-                    borderRadius: '4px'
-                  }}>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (handleSyncRecord) handleSyncRecord(item)
+                    }}
+                    className="badge" 
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.12)',
+                      color: '#f59e0b',
+                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    title="Clique para tentar sincronizar agora"
+                  >
                     ⏳ Pendente
-                  </span>
+                  </button>
                 ) : (
                   <span className="badge badge-success" style={{
                     display: 'flex',
