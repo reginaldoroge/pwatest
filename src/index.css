@@ -1259,6 +1259,20 @@ p {
   color: var(--error);
 }
 
+.install-banner-perm-item.perm-clickable {
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.install-banner-perm-item.perm-clickable:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.install-banner-perm-item.perm-clickable:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .install-banner-settings-hint {
   display: flex;
   align-items: flex-start;

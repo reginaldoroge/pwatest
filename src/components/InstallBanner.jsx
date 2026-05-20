@@ -121,8 +121,62 @@ export default function InstallBanner() {
     setDeferredPrompt(null)
   }
 
+  const recheckPermissions = async () => {
+    const perms = { camera: 'unknown', location: 'unknown', notifications: 'unknown' }
+    try {
+      const cam = await navigator.permissions.query({ name: 'camera' })
+      perms.camera = cam.state
+    } catch { perms.camera = 'prompt' }
+    try {
+      const geo = await navigator.permissions.query({ name: 'geolocation' })
+      perms.location = geo.state
+    } catch { perms.location = 'prompt' }
+    try {
+      if ('Notification' in window) {
+        perms.notifications = Notification.permission === 'default' ? 'prompt' : Notification.permission
+      } else {
+        perms.notifications = 'unavailable'
+      }
+    } catch { perms.notifications = 'unavailable' }
+    setPermissions(perms)
+  }
+
+  const handleRequestPermission = async (key) => {
+    setIsRequesting(key)
+
+    if (key === 'camera' && permissions.camera !== 'granted' && permissions.camera !== 'denied') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        stream.getTracks().forEach(t => t.stop())
+      } catch (err) {
+        console.warn('Camera permission denied:', err)
+      }
+    }
+
+    if (key === 'location' && permissions.location !== 'granted' && permissions.location !== 'denied') {
+      try {
+        await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+        })
+      } catch (err) {
+        console.warn('Geolocation permission denied:', err)
+      }
+    }
+
+    if (key === 'notifications' && (permissions.notifications === 'prompt' || permissions.notifications === 'default')) {
+      try {
+        await Notification.requestPermission()
+      } catch (err) {
+        console.warn('Notification permission denied:', err)
+      }
+    }
+
+    setIsRequesting(false)
+    setTimeout(recheckPermissions, 500)
+  }
+
   const handleRequestPermissions = async () => {
-    setIsRequesting(true)
+    setIsRequesting('all')
 
     // Request Camera (only if not denied/blocked)
     if (permissions.camera !== 'granted' && permissions.camera !== 'denied') {
@@ -155,27 +209,7 @@ export default function InstallBanner() {
     }
 
     setIsRequesting(false)
-
-    // Re-check permissions after request to update UI immediately
-    setTimeout(async () => {
-      const perms = { camera: 'unknown', location: 'unknown', notifications: 'unknown' }
-      try {
-        const cam = await navigator.permissions.query({ name: 'camera' })
-        perms.camera = cam.state
-      } catch { perms.camera = 'prompt' }
-      try {
-        const geo = await navigator.permissions.query({ name: 'geolocation' })
-        perms.location = geo.state
-      } catch { perms.location = 'prompt' }
-      try {
-        if ('Notification' in window) {
-          perms.notifications = Notification.permission === 'default' ? 'prompt' : Notification.permission
-        } else {
-          perms.notifications = 'unavailable'
-        }
-      } catch { perms.notifications = 'unavailable' }
-      setPermissions(perms)
-    }, 500)
+    setTimeout(recheckPermissions, 500)
   }
 
   if (!showBanner) return null
@@ -257,28 +291,38 @@ export default function InstallBanner() {
           </span>
 
           <div className="install-banner-perm-list">
-            {permissionItems.map((item) => (
-              <div key={item.key} className="install-banner-perm-item">
-                <div className={`install-banner-perm-icon ${item.status === 'granted' ? 'perm-granted' : item.status === 'denied' ? 'perm-denied' : 'perm-pending'}`}>
-                  {item.icon}
+            {permissionItems.map((item) => {
+              const canRequest = item.status !== 'granted' && item.status !== 'denied' && item.status !== 'unavailable'
+              const isClickable = canRequest && !isRequesting
+              return (
+                <div
+                  key={item.key}
+                  className={`install-banner-perm-item ${isClickable ? 'perm-clickable' : ''}`}
+                  onClick={isClickable ? () => handleRequestPermission(item.key) : undefined}
+                >
+                  <div className={`install-banner-perm-icon ${item.status === 'granted' ? 'perm-granted' : item.status === 'denied' ? 'perm-denied' : 'perm-pending'}`}>
+                    {item.icon}
+                  </div>
+                  <div className="install-banner-perm-info">
+                    <span className="install-banner-perm-label">{item.label}</span>
+                    <span className="install-banner-perm-desc">{item.desc}</span>
+                  </div>
+                  <div className="install-banner-perm-status">
+                    {item.status === 'granted' ? (
+                      <CheckCircle2 size={18} style={{ color: 'var(--success)' }} />
+                    ) : item.status === 'denied' ? (
+                      <span className="perm-denied-badge">Bloqueado</span>
+                    ) : item.status === 'unavailable' ? (
+                      <span className="perm-na-badge">N/A</span>
+                    ) : isRequesting === item.key ? (
+                      <span className="animate-spin" style={{ display: 'inline-flex', fontSize: '12px' }}>⏳</span>
+                    ) : (
+                      <span className="perm-pending-badge">Toque para liberar</span>
+                    )}
+                  </div>
                 </div>
-                <div className="install-banner-perm-info">
-                  <span className="install-banner-perm-label">{item.label}</span>
-                  <span className="install-banner-perm-desc">{item.desc}</span>
-                </div>
-                <div className="install-banner-perm-status">
-                  {item.status === 'granted' ? (
-                    <CheckCircle2 size={18} style={{ color: 'var(--success)' }} />
-                  ) : item.status === 'denied' ? (
-                    <span className="perm-denied-badge">Bloqueado</span>
-                  ) : item.status === 'unavailable' ? (
-                    <span className="perm-na-badge">N/A</span>
-                  ) : (
-                    <span className="perm-pending-badge">Pendente</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Settings hint for blocked permissions */}
@@ -296,9 +340,9 @@ export default function InstallBanner() {
             <button
               className="install-banner-grant-btn"
               onClick={handleRequestPermissions}
-              disabled={isRequesting}
+              disabled={!!isRequesting}
             >
-              {isRequesting ? (
+              {isRequesting === 'all' ? (
                 <>
                   <span className="animate-spin" style={{ display: 'inline-flex' }}>⏳</span>
                   Solicitando...
@@ -306,7 +350,7 @@ export default function InstallBanner() {
               ) : (
                 <>
                   <Shield size={16} />
-                  Liberar Permissões
+                  Liberar Todas
                 </>
               )}
             </button>
