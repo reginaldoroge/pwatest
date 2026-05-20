@@ -14,7 +14,7 @@ export const sendRecordToServer = async (record) => {
     const response = await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'text/plain'
       },
       body: JSON.stringify(record)
     })
