@@ -107,6 +107,9 @@ export default function LoginForm({
           </label>
           <input 
             type="text" 
+            name="name"
+            id="employee_name"
+            autoComplete="name"
             className="form-input" 
             placeholder="Ex: João da Silva" 
             value={name}
