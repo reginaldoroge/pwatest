@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import Header from './components/Header'
 import Clock from './components/Clock'
+import MainMenu from './components/MainMenu'
 import LoginForm from './components/LoginForm'
 import CameraView from './components/CameraView'
 import ReceiptView from './components/ReceiptView'
 import HistoryList from './components/HistoryList'
+import { ArrowLeft, Fingerprint, CalendarDays } from 'lucide-react'
 import { playBuzzerSound } from './utils/audio'
 import { getCoordinates } from './utils/geolocation'
 import { sendRecordToServer, syncPendingRecords, recordSyncFailure } from './utils/sync'
@@ -42,6 +44,7 @@ function App() {
 
   const [captureStatusText, setCaptureStatusText] = useState('')
   const [showLogoffConfirm, setShowLogoffConfirm] = useState(false)
+  const [currentScreen, setCurrentScreen] = useState('menu') // 'menu' | 'ponto' | 'historico'
 
   // Refs
   const videoRef = useRef(null)
@@ -475,6 +478,15 @@ function App() {
     setSuccessRecord(null)
     setGeolocation(null)
     setGeoError(null)
+    setCurrentScreen('menu')
+  }
+
+  const navigateToMenu = () => {
+    stopCamera()
+    setIsCameraActive(false)
+    setStampedPhoto(null)
+    setSuccessRecord(null)
+    setCurrentScreen('menu')
   }
 
   const handleDownload = () => {
@@ -549,11 +561,16 @@ function App() {
     }
   }
 
+  const pendingCount = attendanceHistory.filter(r => r.syncStatus === 'pending').length
+
   return (
     <>
+      {/* HEADER — always visible when logged in */}
       {!isConfiguring && (
         <Header employeeName={employeeName} employeeRole={employeeRole} onLogoff={handleLogoff} isOnline={isOnline} />
       )}
+
+      {/* LOGIN SCREEN */}
       {isConfiguring && (
         <div style={{ 
           flex: 1, 
@@ -569,32 +586,119 @@ function App() {
           />
         </div>
       )}
-      {!isConfiguring && !stampedPhoto && <Clock />}
-      {!isConfiguring && !stampedPhoto && (
-        <CameraView
-          isCameraActive={isCameraActive} setIsCameraActive={setIsCameraActive}
-          startCamera={startCamera} stopCamera={stopCamera}
-          isRegistering={isRegistering} captureStatusText={captureStatusText}
-          videoRef={videoRef} isCapturingLocation={isCapturingLocation}
-          geolocation={geolocation} geoError={geoError}
-          getCoordinates={triggerGetCoordinates} toggleCameraFacing={toggleCameraFacing}
-          handleRegisterPoint={handleRegisterPoint} cameraError={cameraError}
+
+      {/* ===== MAIN MENU SCREEN ===== */}
+      {!isConfiguring && currentScreen === 'menu' && (
+        <MainMenu
+          onNavigate={setCurrentScreen}
+          employeeName={employeeName}
+          pendingCount={pendingCount}
         />
       )}
-      {stampedPhoto && successRecord && (
-        <ReceiptView
-          stampedPhoto={stampedPhoto} successRecord={successRecord}
-          handleShareWhatsApp={handleShareWhatsApp} handleDownload={handleDownload}
-          handleReset={handleReset}
-        />
+
+      {/* ===== BATER PONTO SCREEN ===== */}
+      {!isConfiguring && currentScreen === 'ponto' && (
+        <div className="page-enter">
+          {/* Back Button */}
+          {!stampedPhoto && (
+            <button className="nav-back-btn" onClick={navigateToMenu} id="btn-back-ponto">
+              <ArrowLeft size={16} />
+              <span>Voltar ao Menu</span>
+            </button>
+          )}
+
+          {/* Page Title */}
+          {!stampedPhoto && (
+            <div className="page-title-header">
+              <div className="page-title-icon page-title-icon-primary">
+                <Fingerprint size={20} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '18px', lineHeight: '1.2' }}>Bater Ponto</h2>
+                <p style={{ fontSize: '12px', marginTop: '2px' }}>Registre sua entrada ou saída</p>
+              </div>
+            </div>
+          )}
+
+          {/* Clock */}
+          {!stampedPhoto && <Clock />}
+
+          {/* Camera & Registration */}
+          {!stampedPhoto && (
+            <CameraView
+              isCameraActive={isCameraActive} setIsCameraActive={setIsCameraActive}
+              startCamera={startCamera} stopCamera={stopCamera}
+              isRegistering={isRegistering} captureStatusText={captureStatusText}
+              videoRef={videoRef} isCapturingLocation={isCapturingLocation}
+              geolocation={geolocation} geoError={geoError}
+              getCoordinates={triggerGetCoordinates} toggleCameraFacing={toggleCameraFacing}
+              handleRegisterPoint={handleRegisterPoint} cameraError={cameraError}
+            />
+          )}
+
+          {/* Receipt after registration */}
+          {stampedPhoto && successRecord && (
+            <ReceiptView
+              stampedPhoto={stampedPhoto} successRecord={successRecord}
+              handleShareWhatsApp={handleShareWhatsApp} handleDownload={handleDownload}
+              handleReset={handleReset}
+            />
+          )}
+        </div>
       )}
-      <HistoryList
-        isConfiguring={isConfiguring} attendanceHistory={attendanceHistory}
-        setStampedPhoto={setStampedPhoto} setSuccessRecord={setSuccessRecord}
-        handleDeleteRecord={handleDeleteRecord}
-        handleSyncRecord={handleSyncRecord}
-      />
+
+      {/* ===== HISTÓRICO SCREEN ===== */}
+      {!isConfiguring && currentScreen === 'historico' && (
+        <div className="page-enter">
+          {/* Back Button */}
+          {!stampedPhoto && (
+            <button className="nav-back-btn" onClick={navigateToMenu} id="btn-back-historico">
+              <ArrowLeft size={16} />
+              <span>Voltar ao Menu</span>
+            </button>
+          )}
+
+          {/* Page Title */}
+          {!stampedPhoto && (
+            <div className="page-title-header">
+              <div className="page-title-icon page-title-icon-secondary">
+                <CalendarDays size={20} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '18px', lineHeight: '1.2' }}>Histórico de Pontos</h2>
+                <p style={{ fontSize: '12px', marginTop: '2px' }}>Consulte todos os registros anteriores</p>
+              </div>
+            </div>
+          )}
+
+          {/* Receipt view when clicking a history item */}
+          {stampedPhoto && successRecord ? (
+            <>
+              <button className="nav-back-btn" onClick={() => { setStampedPhoto(null); setSuccessRecord(null) }} id="btn-back-receipt">
+                <ArrowLeft size={16} />
+                <span>Voltar ao Histórico</span>
+              </button>
+              <ReceiptView
+                stampedPhoto={stampedPhoto} successRecord={successRecord}
+                handleShareWhatsApp={handleShareWhatsApp} handleDownload={handleDownload}
+                handleReset={() => { setStampedPhoto(null); setSuccessRecord(null) }}
+              />
+            </>
+          ) : (
+            <HistoryList
+              isConfiguring={false}
+              attendanceHistory={attendanceHistory}
+              setStampedPhoto={setStampedPhoto}
+              setSuccessRecord={setSuccessRecord}
+              handleDeleteRecord={handleDeleteRecord}
+              handleSyncRecord={handleSyncRecord}
+            />
+          )}
+        </div>
+      )}
+
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+      
       <footer className="footer-info">
         <span>© 2026 Ponto Seguro PWA</span>
         <span>Tecnologia PWA Offline</span>
