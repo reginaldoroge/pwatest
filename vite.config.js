@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon.ico', 'icon-192.png', 'icon-512.png'],
       manifest: {
@@ -18,6 +21,24 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
+        share_target: {
+          action: '/share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            files: [
+              {
+                name: 'files',
+                accept: [
+                  'image/*',
+                  'application/pdf',
+                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                  'text/plain'
+                ]
+              }
+            ]
+          }
+        },
         icons: [
           {
             src: 'icon-192.png',

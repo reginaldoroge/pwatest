@@ -18,13 +18,39 @@ export default function ReceiptView({
         <p>Seu comprovante eletrônico carimbado foi gerado e salvo offline.</p>
       </div>
 
-      {/* Stamped image output showcase */}
+      {/* Photo preview or Document Preview */}
       <div style={{ position: 'relative' }}>
-        <img 
-          src={stampedPhoto} 
-          alt="Ponto carimbado" 
-          className="photo-preview"
-        />
+        {successRecord.isDocument && successRecord.fileType !== 'image/*' && !successRecord.fileType?.startsWith('image/') ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '40px 20px',
+            background: 'linear-gradient(135deg, rgba(217, 184, 103, 0.15), rgba(217, 184, 103, 0.05))',
+            border: '2px dashed rgba(217, 184, 103, 0.4)',
+            borderRadius: '12px',
+            color: 'var(--text-main)',
+            gap: '12px',
+            marginBottom: '10px'
+          }}>
+            <span style={{ fontSize: '48px' }}>📄</span>
+            <div style={{ textAlign: 'center' }}>
+              <h4 style={{ fontSize: '15px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '280px', margin: '0 auto' }}>
+                {successRecord.fileName || 'documento.pdf'}
+              </h4>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {successRecord.fileType || 'Documento'} {successRecord.fileSize ? `| ${(successRecord.fileSize / 1024).toFixed(1)} KB` : ''}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <img 
+            src={stampedPhoto} 
+            alt="Ponto carimbado" 
+            className="photo-preview"
+          />
+        )}
         <div className="badge badge-success" style={{ position: 'absolute', top: '12px', right: '12px' }}>
           Original Carimbado
         </div>
@@ -79,7 +105,7 @@ export default function ReceiptView({
             style={{ flex: 1 }}
             onClick={handleDownload}
           >
-            <Download size={18} /> Baixar Foto
+            <Download size={18} /> {successRecord.isDocument ? 'Baixar Arquivo' : 'Baixar Foto'}
           </button>
 
           <button 

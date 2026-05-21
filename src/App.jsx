@@ -7,6 +7,7 @@ import LoginForm from './components/LoginForm'
 import CameraView from './components/CameraView'
 import ReceiptView from './components/ReceiptView'
 import HistoryList from './components/HistoryList'
+import ShareReceiver from './components/ShareReceiver'
 import { ArrowLeft, Fingerprint, CalendarDays } from 'lucide-react'
 import { playBuzzerSound } from './utils/audio'
 import { requestCameraStream, stopCameraStream } from './utils/camera'
@@ -47,6 +48,7 @@ function App() {
   const [captureStatusText, setCaptureStatusText] = useState('')
   const [showLogoffConfirm, setShowLogoffConfirm] = useState(false)
   const [currentScreen, setCurrentScreen] = useState('menu') // 'menu' | 'ponto' | 'historico'
+  const [sharedFile, setSharedFile] = useState(null)
 
   // Refs
   const videoRef = useRef(null)
@@ -92,6 +94,39 @@ function App() {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
+  }, [])
+
+  // --- DETECT WEBSHARE TARGET FILE ---
+  useEffect(() => {
+    const checkForSharedFile = async () => {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('share-target') === 'true') {
+        try {
+          const cache = await caches.open('shared-files-cache')
+          const response = await cache.match('/shared-file')
+          if (response) {
+            const blob = await response.blob()
+            const fileName = decodeURIComponent(response.headers.get('X-File-Name') || 'arquivo-whatsapp')
+            const fileType = response.headers.get('Content-Type') || blob.type
+            
+            const file = new File([blob], fileName, { type: fileType })
+            setSharedFile(file)
+            setCurrentScreen('upload-preview')
+            
+            // Limpa o cache para evitar retratar o mesmo arquivo no reload
+            await cache.delete('/shared-file')
+            
+            // Remove o parâmetro de busca da URL de forma limpa para não sujar a navegação
+            const cleanUrl = window.location.origin + window.location.pathname
+            window.history.replaceState({}, document.title, cleanUrl)
+          }
+        } catch (err) {
+          console.error('Erro ao recuperar arquivo compartilhado do cache SW:', err)
+        }
+      }
+    }
+    
+    checkForSharedFile()
   }, [])
 
   // --- AUTO SYNC ON CONNECT EFFECT ---
@@ -472,6 +507,7 @@ function App() {
     setSuccessRecord(null)
     setGeolocation(null)
     setGeoError(null)
+    setSharedFile(null)
     setCurrentScreen('menu')
   }
 
@@ -480,6 +516,7 @@ function App() {
     setIsCameraActive(false)
     setStampedPhoto(null)
     setSuccessRecord(null)
+    setSharedFile(null)
     setCurrentScreen('menu')
   }
 
@@ -487,7 +524,8 @@ function App() {
     if (!stampedPhoto || !successRecord) return
     const link = document.createElement('a')
     link.href = stampedPhoto
-    link.download = `Ponto_${employeeName.replace(/\s+/g, '_')}_${successRecord.date.replace(/\//g, '-')}_${successRecord.time.replace(/:/g, '')}.jpg`
+    const ext = successRecord.isDocument ? (successRecord.fileName?.split('.').pop() || 'pdf') : 'jpg'
+    link.download = `Ponto_${employeeName.replace(/\s+/g, '_')}_${successRecord.date.replace(/\//g, '-')}_${successRecord.time.replace(/:/g, '')}.${ext}`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -496,14 +534,17 @@ function App() {
   const handleShareWhatsApp = async () => {
     if (!successRecord || !stampedPhoto) return
     const mapsUrl = `https://www.google.com/maps?q=${successRecord.latitude},${successRecord.longitude}`
-    const shareText = `⏰ *PONTO ELETRÔNICO REGISTRADO!* ⏰\n\n👤 *Funcionário:* ${successRecord.employeeName}\n💼 *Cargo:* ${successRecord.employeeRole}\n📅 *Data:* ${successRecord.date}\n🕒 *Hora:* ${successRecord.time}\n` + (successRecord.address ? `🏠 *Endereço:* ${successRecord.address}\n` : '') + `📍 *Localização:* ${mapsUrl}\n\n*Comprovante de Ponto com Foto gerado com sucesso.*`
+    const shareText = `⏰ *PONTO ELETRÔNICO REGISTRADO!* ⏰\n\n👤 *Funcionário:* ${successRecord.employeeName}\n💼 *Cargo:* ${successRecord.employeeRole}\n📅 *Data:* ${successRecord.date}\n🕒 *Hora:* ${successRecord.time}\n` + (successRecord.address ? `🏠 *Endereço:* ${successRecord.address}\n` : '') + `📍 *Localização:* ${mapsUrl}\n\n*Comprovante de Ponto ${successRecord.isDocument ? 'com Documento' : 'com Foto'} gerado com sucesso.*`
     
     if (navigator.share && navigator.canShare) {
       try {
         const res = await fetch(stampedPhoto)
         const blob = await res.blob()
-        const fileName = `ponto-${successRecord.date.replace(/\//g, '-')}-${successRecord.time.replace(/:/g, '')}.jpg`
-        const file = new File([blob], fileName, { type: 'image/jpeg' })
+        const fileName = successRecord.isDocument 
+          ? successRecord.fileName 
+          : `ponto-${successRecord.date.replace(/\//g, '-')}-${successRecord.time.replace(/:/g, '')}.jpg`
+        const fileType = successRecord.isDocument ? successRecord.fileType : 'image/jpeg'
+        const file = new File([blob], fileName, { type: fileType })
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: 'Registro de Ponto', text: shareText })
           return
@@ -515,7 +556,8 @@ function App() {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank')
     setTimeout(() => {
       handleDownload()
-      alert("Comprovante enviado! A foto carimbada foi baixada no seu dispositivo. Caso queira, anexe-a na mensagem.")
+      const desc = successRecord.isDocument ? "O arquivo enviado" : "A foto carimbada"
+      alert(`Comprovante enviado! ${desc} foi baixado no seu dispositivo. Caso queira, anexe-o na mensagem.`)
     }, 800)
   }
 
@@ -587,6 +629,10 @@ function App() {
           onNavigate={setCurrentScreen}
           employeeName={employeeName}
           pendingCount={pendingCount}
+          onFileSelect={(file) => {
+            setSharedFile(file)
+            setCurrentScreen('upload-preview')
+          }}
         />
       )}
 
@@ -693,6 +739,52 @@ function App() {
               handleDeleteRecord={handleDeleteRecord}
               handleSyncRecord={handleSyncRecord}
             />
+          )}
+        </div>
+      )}
+
+      {/* ===== UPLOAD SCREEN (SHARE TARGET / FALLBACK) ===== */}
+      {!isConfiguring && currentScreen === 'upload-preview' && (
+        <div className="page-enter">
+          {/* Back Button */}
+          {!stampedPhoto && (
+            <button className="nav-back-btn" onClick={navigateToMenu} id="btn-back-upload">
+              <ArrowLeft size={16} />
+              <span>Voltar ao Menu</span>
+            </button>
+          )}
+
+          {!stampedPhoto ? (
+            <ShareReceiver
+              sharedFile={sharedFile}
+              onCancel={navigateToMenu}
+              employeeCpf={employeeCpf}
+              employeeName={employeeName}
+              employeeRole={employeeRole}
+              isOnline={isOnline}
+              onSuccess={async (record) => {
+                setStampedPhoto(record.photo)
+                setSuccessRecord(record)
+                
+                // Salva no historico local
+                setAttendanceHistory(prev => [record, ...prev])
+                playBuzzerSound(true)
+              }}
+            />
+          ) : (
+            <>
+              <button className="nav-back-btn" onClick={handleReset} id="btn-back-upload-receipt">
+                <ArrowLeft size={16} />
+                <span>Voltar ao Menu</span>
+              </button>
+              <ReceiptView
+                stampedPhoto={stampedPhoto}
+                successRecord={successRecord}
+                handleShareWhatsApp={handleShareWhatsApp}
+                handleDownload={handleDownload}
+                handleReset={handleReset}
+              />
+            </>
           )}
         </div>
       )}

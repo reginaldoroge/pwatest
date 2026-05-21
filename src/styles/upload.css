@@ -1,0 +1,191 @@
+/* ======================================
+   UPLOAD PREVIEW & SHARE TARGET STYLES
+   ====================================== */
+
+.upload-screen-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  animation: uploadFadeIn 0.4s ease-out;
+}
+
+@keyframes uploadFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.upload-title-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.upload-title-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(217, 184, 103, 0.15), rgba(217, 184, 103, 0.05));
+  border: 1px solid rgba(217, 184, 103, 0.25);
+  color: var(--primary);
+}
+
+/* Area de Preview de Arquivo */
+.upload-preview-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 13, 22, 0.4);
+  border: 1.5px dashed var(--card-border);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  min-height: 200px;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition-smooth);
+}
+
+.upload-preview-card:hover {
+  border-color: var(--primary);
+  background: rgba(9, 13, 22, 0.6);
+}
+
+.upload-img-preview {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 8px;
+  object-fit: contain;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.upload-doc-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  color: var(--text-main);
+  padding: 16px;
+}
+
+.upload-doc-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(217, 184, 103, 0.1);
+  border: 2px dashed var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  animation: docPulse 2s infinite alternate;
+}
+
+@keyframes docPulse {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgba(217, 184, 103, 0.2);
+  }
+  100% {
+    transform: scale(1.04);
+    box-shadow: 0 0 12px 4px rgba(217, 184, 103, 0.15);
+  }
+}
+
+.upload-doc-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  word-break: break-all;
+  max-width: 280px;
+}
+
+.upload-doc-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Info List */
+.upload-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 14px;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--card-border);
+  font-size: 13px;
+}
+
+.upload-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-info-label {
+  color: var(--text-muted);
+}
+
+.upload-info-value {
+  font-weight: 600;
+  text-align: right;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status do GPS */
+.upload-gps-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.upload-gps-active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.upload-gps-loading {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  animation: gpsPulse 1.5s infinite alternate;
+}
+
+@keyframes gpsPulse {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+.upload-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.hidden-file-input {
+  display: none;
+}

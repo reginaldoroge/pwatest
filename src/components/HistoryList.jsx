@@ -82,9 +82,15 @@ export default function HistoryList({
                       setSuccessRecord(item)
                     }}
                   >
-                    {/* Photo */}
+                    {/* Photo or Document Fallback */}
                     <div className="history-card-photo-wrap">
-                      <img src={item.photo} alt="Ponto" className="history-card-photo" />
+                      {item.isDocument && item.fileType !== 'image/*' && !item.fileType?.startsWith('image/') ? (
+                        <div className="history-card-doc-fallback" title={item.fileName || 'Documento'}>
+                          📄
+                        </div>
+                      ) : (
+                        <img src={item.photo} alt="Ponto" className="history-card-photo" />
+                      )}
                       <div className="history-card-photo-overlay">
                         <Clock size={12} />
                         <span>{item.time}</span>

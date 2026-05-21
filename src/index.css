@@ -2,6 +2,7 @@
 @import './styles/camera.css';
 @import './styles/history.css';
 @import './styles/menu.css';
+@import './styles/upload.css';
 
 :root {
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

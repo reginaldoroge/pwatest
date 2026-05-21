@@ -1,7 +1,7 @@
-import { Clock, CalendarDays, Fingerprint, ChevronRight, Shield } from 'lucide-react'
+import { Clock, CalendarDays, Fingerprint, ChevronRight, Shield, FileText } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-export default function MainMenu({ onNavigate, employeeName, pendingCount }) {
+export default function MainMenu({ onNavigate, employeeName, pendingCount, onFileSelect }) {
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
@@ -67,6 +67,26 @@ export default function MainMenu({ onNavigate, employeeName, pendingCount }) {
           <ChevronRight size={20} className="menu-card-arrow" />
         </button>
 
+        {/* ENVIAR DOCUMENTO */}
+        <button
+          className="menu-card menu-card-secondary"
+          onClick={() => document.getElementById('main-menu-file-input').click()}
+          id="menu-btn-upload"
+          style={{
+            borderLeft: '4px solid var(--primary)',
+            background: 'rgba(217, 184, 103, 0.03)'
+          }}
+        >
+          <div className="menu-card-icon-wrap" style={{ background: 'rgba(217, 184, 103, 0.1)', color: 'var(--primary)' }}>
+            <FileText size={28} strokeWidth={1.8} />
+          </div>
+          <div className="menu-card-content">
+            <span className="menu-card-title">Enviar Documento</span>
+            <span className="menu-card-desc">Enviar fotos ou PDFs salvos do WhatsApp</span>
+          </div>
+          <ChevronRight size={20} className="menu-card-arrow" />
+        </button>
+
         {/* HISTÓRICO */}
         <button
           className="menu-card menu-card-secondary"
@@ -88,6 +108,20 @@ export default function MainMenu({ onNavigate, employeeName, pendingCount }) {
           </div>
         </button>
       </div>
+
+      <input
+        type="file"
+        id="main-menu-file-input"
+        className="hidden-file-input"
+        accept="image/*,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file && onFileSelect) {
+            onFileSelect(file)
+          }
+          e.target.value = ''
+        }}
+      />
 
       {/* Security Badge */}
       <div className="menu-security-badge">
